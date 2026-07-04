@@ -1,5 +1,9 @@
 import { PublicKey } from '@hashgraph/sdk';
-import { verifyMessageSignature } from '@hashgraph/hedera-wallet-connect';
+// Deep-import the shared subpath instead of the package root: the root
+// barrel also re-exports a Reown WalletKit/AppKit integration we don't use,
+// which would otherwise pull `@reown/appkit`, `@reown/walletkit`, and
+// `ethers` into the server bundle.
+import { verifyMessageSignature } from '@hashgraph/hedera-wallet-connect/dist/lib/shared';
 import type { MirrorAccountKey } from './mirror-node';
 
 /**

@@ -16,7 +16,6 @@ import { env } from './env';
 // file as the one that needs manual QA against real wallets (HashPack,
 // Kabila) before relying on it in production.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let connector: any = null;
 
 function chainAndNetwork() {
@@ -30,8 +29,16 @@ async function getConnector() {
     throw new Error('WalletConnect is not configured (NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID).');
   }
 
-  const [{ DAppConnector, HederaJsonRpcMethod, HederaSessionEvent }, { LedgerId }] =
-    await Promise.all([import('@hashgraph/hedera-wallet-connect'), import('@hashgraph/sdk')]);
+  // Deep-import the dapp/shared subpaths instead of the package root: the
+  // root barrel also re-exports a `./wallet` (Reown WalletKit) and `./reown`
+  // (Reown AppKit) integration we don't use, which would otherwise pull
+  // `@reown/appkit`, `@reown/walletkit`, and `ethers` into the bundle.
+  const [{ DAppConnector }, { HederaJsonRpcMethod, HederaSessionEvent }, { LedgerId }] =
+    await Promise.all([
+      import('@hashgraph/hedera-wallet-connect/dist/lib/dapp'),
+      import('@hashgraph/hedera-wallet-connect/dist/lib/shared'),
+      import('@hashgraph/sdk'),
+    ]);
 
   const { network, chainId } = chainAndNetwork();
   const ledgerId = network === 'mainnet' ? LedgerId.MAINNET : LedgerId.TESTNET;
@@ -43,7 +50,6 @@ async function getConnector() {
       url: env.appUrl,
       icons: [`${env.appUrl}/favicon.ico`],
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ledgerId as any,
     env.walletConnectProjectId,
     [HederaJsonRpcMethod.SignMessage],
