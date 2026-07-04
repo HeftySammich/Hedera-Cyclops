@@ -1,4 +1,5 @@
 import { PublicKey } from '@hashgraph/sdk';
+import { verifyMessageSignature } from '@hashgraph/hedera-wallet-connect';
 import type { MirrorAccountKey } from './mirror-node';
 
 /**
@@ -7,23 +8,32 @@ import type { MirrorAccountKey } from './mirror-node';
  * single keys. Threshold/keylist accounts are not supported for sign-in
  * (rare for holder wallets) and will fail closed.
  *
- * NOTE: exact byte-encoding of the signed message can differ slightly by
- * wallet (HashPack vs Kabila). This has been implemented against the
- * documented WalletConnect `hedera_signMessage` contract (UTF-8 message
- * bytes, raw signature bytes) but MUST be manually QA'd against both real
- * wallets before relying on it in production — see README "Testing".
+ * `signatureMapBase64` is the base64-encoded `proto.SignatureMap` string
+ * returned by a wallet's `hedera_signMessage` WalletConnect call (the
+ * `signatureMap` field of `SignMessageResult`) — NOT a raw signature. We
+ * delegate the actual protobuf parsing + verification to
+ * `@hashgraph/hedera-wallet-connect`'s `verifyMessageSignature`, which also
+ * applies the same message-prefixing wallets use before signing, so this
+ * only works when the connecting wallet implements that same convention
+ * (HashPack and Kabila both do via hedera-wallet-connect). The PublicKey
+ * instance is cast across a differently-resolved copy of the Hedera SDK
+ * pulled in transitively by hedera-wallet-connect (`@hiero-ledger/sdk`) —
+ * `verify()` is duck-typed and behaves identically either way, but this
+ * MUST still be manually QA'd against real wallets — see README "Testing".
  */
 export function verifyHederaSignature(
   accountKey: MirrorAccountKey,
   message: string,
-  signatureBase64: string
+  signatureMapBase64: string
 ): boolean {
   if (!accountKey?.key) return false;
   try {
     const publicKey = PublicKey.fromString(accountKey.key);
-    const messageBytes = Buffer.from(message, 'utf-8');
-    const signatureBytes = Buffer.from(signatureBase64, 'base64');
-    return publicKey.verify(messageBytes, signatureBytes);
+    return verifyMessageSignature(
+      message,
+      signatureMapBase64,
+      publicKey as unknown as Parameters<typeof verifyMessageSignature>[2]
+    );
   } catch {
     return false;
   }

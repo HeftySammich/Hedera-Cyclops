@@ -28,6 +28,11 @@ function parsePhases(value: string | undefined): PhaseConfig[] {
 export const env = {
   databaseUrl: process.env.DATABASE_URL ?? '',
   hederaNetwork: (process.env.HEDERA_NETWORK ?? 'testnet') as 'mainnet' | 'testnet',
+  // Server-only HEDERA_NETWORK isn't visible in the browser bundle; wallet
+  // setup runs client-side, so it needs its own NEXT_PUBLIC_ mirror.
+  publicHederaNetwork: (process.env.NEXT_PUBLIC_HEDERA_NETWORK ?? 'testnet') as
+    | 'mainnet'
+    | 'testnet',
   get tokenIds(): string[] {
     return csv(process.env.HEDERA_TOKEN_IDS);
   },
