@@ -66,7 +66,8 @@ All configuration is via environment variables — see `.env.example` for the
 full annotated list. Highlights:
 
 - `DATABASE_URL` — Postgres connection string.
-- `HEDERA_NETWORK` — `mainnet` | `testnet`.
+- `HEDERA_NETWORK` / `NEXT_PUBLIC_HEDERA_NETWORK` — `mainnet` | `testnet` (keep
+  both in sync — the client-side wallet setup needs its own public copy).
 - `HEDERA_TOKEN_IDS` — comma-separated HTS token ids that gate the site.
 - `MIRROR_NODE_BASE_URL` — Mirror Node REST base URL for the network.
 - `IPFS_GATEWAY_URL` — gateway used to resolve `ipfs://` media.
@@ -87,14 +88,29 @@ npm run typecheck # tsc --noEmit
 npm run build     # production build (also runs prisma generate)
 ```
 
-Unit tests cover trust-score calculation, Mirror Node holdership logic, JWT
-issue/verify, and trait-filter query building. Integration tests cover the auth
-flow and gated-write rejection. Component tests cover the wallet gating UI
-states (disconnected → connecting → non-holder → holder).
+Unit tests cover trust-score calculation, Mirror Node holdership logic (with
+mocked `fetch` + pagination), JWT issue/verify, sanitize, and Zod request
+validation. A component test covers the holder-gate UI across guest,
+signed-in-non-holder, and holder states. API-route integration tests and
+end-to-end wallet flows are a follow-up (see Known gaps).
 
 > **Manual QA required:** WalletConnect signature verification cannot be fully
 > mocked. Before release, manually verify sign-in against **both** HashPack and
 > Kabila on the configured network.
+
+## Known gaps / follow-ups
+
+- **Real token ids / secrets are not set.** `HEDERA_TOKEN_IDS`, `AUTH_JWT_SECRET`,
+  `OBJECT_STORAGE_*`, and `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` all need real
+  values in Railway before deploy; the site runs in mock-data/placeholder mode
+  until then.
+- **WalletConnect sign-in needs manual QA** against HashPack and Kabila — see
+  the callout above. The `signMessage` → `SignatureMap` verification path is
+  implemented against the documented contract but untested against real wallets.
+- **No integration/e2e tests yet** for the API routes or the full connect →
+  sign-in → post/vouch/RSVP flows — only unit and one component test exist.
+- **Moderation is minimal**: admins (via `ADMIN_WALLET_ADDRESSES`) can delete
+  posts/events, but there's no report/flag UI yet.
 
 ## Deployment (Railway)
 
