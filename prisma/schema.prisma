@@ -1,0 +1,117 @@
+// Prisma schema for Hedera Cyclops.
+// NFT ownership is NEVER stored here as a source of truth — it is always
+// re-verified live against the Hedera Mirror Node. User.pfpSerial is only a
+// stored preference and is re-validated on use.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  username      String?  @unique
+  pfpSerial     Int?
+  isAdmin       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  posts       Post[]
+  likes       Like[]
+  wallEvents  WallEvent[]
+  projects    Project[]
+  vouches     Vouch[]
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
+  body      String
+  imageUrls String[]  @default([])
+  // Self-relation: null parentId = top-level Town Hall post; set = reply.
+  parent    Post?     @relation("PostReplies", fields: [parentId], references: [id])
+  parentId  String?
+  replies   Post[]    @relation("PostReplies")
+  likes     Like[]
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+  deletedAt DateTime?
+
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model WallEvent {
+  id          String   @id @default(cuid())
+  owner       User     @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  title       String
+  projectName String
+  xSpaceUrl   String
+  // For recurring weekly events: 0-6 (Sun-Sat). Null for one-off events.
+  dayOfWeek   Int?
+  // Stored as UTC; timezone handled on display.
+  startsAt    DateTime
+  recurring   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([startsAt])
+  @@index([dayOfWeek])
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  submittedBy  User     @relation(fields: [submittedById], references: [id])
+  submittedById String
+  name         String
+  xHandle      String?
+  website      String?
+  description  String
+  createdAt    DateTime @default(now())
+
+  vouches Vouch[]
+
+  @@index([createdAt])
+}
+
+model Vouch {
+  id        String   @id @default(cuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  voucher   User     @relation(fields: [voucherId], references: [id])
+  voucherId String
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // One wallet = one vouch per project (anti-Sybil, weight always 1).
+  @@unique([projectId, voucherId])
+  @@index([projectId])
+}
+
+model AuthNonce {
+  id            String   @id @default(cuid())
+  walletAddress String
+  nonce         String   @unique
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([walletAddress])
+  @@index([expiresAt])
+}

@@ -1,0 +1,84 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { useWallet } from '@/components/wallet/wallet-context';
+import { EventForm } from './event-form';
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+interface WallEvent {
+  id: string;
+  title: string;
+  projectName: string;
+  xSpaceUrl: string;
+  startsAt: string;
+  recurring: boolean;
+  dayOfWeek: number | null;
+  ownerId: string;
+  owner: { username: string | null; walletAddress: string };
+}
+
+export function EventList() {
+  const { user } = useWallet();
+  const [events, setEvents] = useState<WallEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    const res = await fetch('/api/wall-events');
+    const data = await res.json();
+    setEvents(data.events ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function remove(id: string) {
+    await fetch(`/api/wall-events/${id}`, { method: 'DELETE' });
+    load();
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <EventForm onCreated={load} />
+      {loading ? (
+        <p className="text-sm text-muted">Loading wall…</p>
+      ) : events.length === 0 ? (
+        <p className="text-sm text-muted">No events on the wall yet.</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {events.map((event) => (
+            <li key={event.id} className="border border-neutral-800 p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-sage">{event.title}</span>
+                <span className="text-xs text-muted">
+                  {event.recurring && event.dayOfWeek !== null
+                    ? `Every ${DAYS[event.dayOfWeek]}`
+                    : format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a")}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted">{event.projectName}</p>
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <a
+                  href={event.xSpaceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted underline hover:text-sage"
+                >
+                  Join X Space
+                </a>
+                {user && (user.id === event.ownerId || user.isAdmin) ? (
+                  <button onClick={() => remove(event.id)} className="text-muted hover:text-sage">
+                    remove
+                  </button>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
