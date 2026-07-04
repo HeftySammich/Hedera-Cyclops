@@ -47,7 +47,7 @@ export const createWallEventSchema = z
     recurring: z.boolean().default(false),
     dayOfWeek: z.number().int().min(0).max(6).nullable().optional(),
   })
-  .refine((data) => !data.recurring || data.dayOfWeek !== null, {
+  .refine((data) => !data.recurring || data.dayOfWeek != null, {
     message: 'Recurring events must specify a dayOfWeek',
     path: ['dayOfWeek'],
   });

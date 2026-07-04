@@ -14,6 +14,9 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    env: {
+      AUTH_JWT_SECRET: 'test-secret-do-not-use-in-production',
+    },
     setupFiles: ['./vitest.setup.ts'],
     // Component tests (*.test.tsx) run in jsdom; everything else in node.
     environmentMatchGlobs: [
