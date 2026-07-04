@@ -108,6 +108,11 @@ export async function listNftsForToken(
   return { nfts: data?.nfts ?? [], next: data?.links?.next ?? null };
 }
 
+export async function getTokenSupply(tokenId: string): Promise<number> {
+  const data = await mirrorFetch<{ total_supply: string }>(`/api/v1/tokens/${tokenId}`);
+  return data ? Number(data.total_supply) : 0;
+}
+
 export function clearMirrorNodeCaches(): void {
   holdershipCache.clear();
   nftListCache.clear();

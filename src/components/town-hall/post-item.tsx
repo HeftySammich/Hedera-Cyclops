@@ -1,0 +1,75 @@
+'use client';
+
+import Link from 'next/link';
+import { useWallet } from '@/components/wallet/wallet-context';
+
+export interface PostAuthor {
+  id: string;
+  username: string | null;
+  walletAddress: string;
+  pfpSerial: number | null;
+}
+
+export interface PostData {
+  id: string;
+  body: string;
+  imageUrls: string[];
+  parentId: string | null;
+  createdAt: string;
+  author: PostAuthor;
+  _count: { likes: number; replies?: number };
+}
+
+function shortAddress(address: string): string {
+  return address.length > 12 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
+}
+
+export function PostItem({
+  post,
+  onLike,
+  showThreadLink = true,
+}: {
+  post: PostData;
+  onLike: (postId: string) => void;
+  showThreadLink?: boolean;
+}) {
+  const { user, holdsCollection } = useWallet();
+  const canAct = Boolean(user && holdsCollection);
+
+  return (
+    <article className="border border-neutral-800 p-3">
+      <header className="flex items-center justify-between text-xs text-muted">
+        <span className="text-sage">
+          {post.author.username ?? shortAddress(post.author.walletAddress)}
+        </span>
+        <time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleString()}</time>
+      </header>
+      <p
+        className="mt-2 whitespace-pre-wrap text-sm text-ink"
+        dangerouslySetInnerHTML={{ __html: post.body }}
+      />
+      {post.imageUrls.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {post.imageUrls.map((url) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={url} src={url} alt="" className="h-24 w-24 object-cover" />
+          ))}
+        </div>
+      ) : null}
+      <footer className="mt-2 flex items-center gap-4 text-xs text-muted">
+        <button
+          onClick={() => onLike(post.id)}
+          disabled={!canAct}
+          className="hover:text-sage disabled:cursor-not-allowed"
+        >
+          ♥ {post._count.likes}
+        </button>
+        {showThreadLink ? (
+          <Link href={`/town-hall/${post.id}`} className="hover:text-sage">
+            {post._count.replies ?? 0} replies
+          </Link>
+        ) : null}
+      </footer>
+    </article>
+  );
+}

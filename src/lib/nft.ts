@@ -3,6 +3,7 @@ import { TtlCache } from './ttl-cache';
 import {
   getNftBySerial,
   getOwnedSerials,
+  getTokenSupply,
   listNftsForToken,
   type MirrorNftRecord,
 } from './mirror-node';
@@ -70,6 +71,15 @@ export async function getCollection(): Promise<CyclopsNft[]> {
     }
   }
   return results.sort((a, b) => a.serial - b.serial);
+}
+
+/** Total minted count across all configured token ids, for the homepage
+ * mint-progress indicator. */
+export async function getMintedCount(): Promise<number> {
+  if (env.useMockNfts) return getMockCollection().length;
+  let total = 0;
+  for (const tokenId of env.tokenIds) total += await getTokenSupply(tokenId);
+  return total;
 }
 
 export async function getNftDetail(tokenId: string, serial: number): Promise<CyclopsNft | null> {
