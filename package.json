@@ -5,6 +5,9 @@
   "description": "Hedera Cyclops — anonymous community dApp and town hall on Hedera.",
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node server.js",
     "build": "prisma generate && next build",
