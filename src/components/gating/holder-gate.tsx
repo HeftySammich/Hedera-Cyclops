@@ -21,7 +21,7 @@ export function HolderGate({ children }: { children: ReactNode }) {
       <p className="mb-4 text-sm text-muted">
         {user
           ? "This wallet doesn't currently hold a Hedera Cyclops."
-          : 'Connect and sign in with a wallet that holds a Hedera Cyclops to continue.'}
+          : 'Connect your wallet, then sign the message to verify ownership and continue.'}
       </p>
       {!user ? (
         <Button onClick={() => signIn()} disabled={isConnecting || isSigningIn}>

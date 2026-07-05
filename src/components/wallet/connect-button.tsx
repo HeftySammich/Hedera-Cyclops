@@ -24,7 +24,7 @@ export function ConnectButton() {
   if (accountId) {
     return (
       <Button onClick={() => signIn()} disabled={isSigningIn}>
-        {isSigningIn ? 'Signing…' : `Sign in as ${shortAddress(accountId)}`}
+        {isSigningIn ? 'Signing…' : shortAddress(accountId)}
       </Button>
     );
   }
