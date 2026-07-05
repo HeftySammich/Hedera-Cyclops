@@ -35,7 +35,11 @@ async function fetchMetadataForRecord(record: MirrorNftRecord): Promise<NftMetad
       const res = await fetch(uri);
       if (!res.ok) return null;
       const json = await res.json();
-      return parseNftMetadata(json);
+      const metadata = parseNftMetadata(json);
+      if (!metadata) return null;
+      // Resolve ipfs:// image URIs so the browser can load them via the
+      // configured gateway; leave non-ipfs URIs untouched.
+      return { ...metadata, image: resolveIpfsUri(metadata.image) };
     } catch {
       return null;
     }
@@ -104,7 +108,9 @@ async function getCollectionUncached(): Promise<CyclopsNft[]> {
  * always re-verifies ownership live, never from this cache. */
 export const getCollection = unstable_cache(
   getCollectionUncached,
-  ['cyclops-collection', env.tokenIds.join(','), env.ipfsGatewayUrl],
+  // Bumping the cache key version forces a fresh fetch after code changes that
+  // affect the cached shape (e.g. adding IPFS image URL resolution).
+  ['cyclops-collection', 'v2', env.tokenIds.join(','), env.ipfsGatewayUrl],
   { revalidate: 300, tags: ['cyclops-collection'] }
 );
 
