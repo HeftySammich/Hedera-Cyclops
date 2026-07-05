@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/session';
 import { gateError } from '@/lib/api';
+import { resolvePfpImageUrl } from '@/lib/nft';
 
 const AUTHOR_SELECT = {
   select: { id: true, username: true, walletAddress: true, pfpSerial: true },
@@ -26,8 +27,18 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  const postsWithPfp = await Promise.all(
+    posts.map(async (post) => ({
+      ...post,
+      author: {
+        ...post.author,
+        pfpImageUrl: await resolvePfpImageUrl(post.author.walletAddress, post.author.pfpSerial),
+      },
+    }))
+  );
+
   return NextResponse.json({
-    posts,
+    posts: postsWithPfp,
     nextCursor: posts.length === take ? posts[posts.length - 1].id : null,
   });
 }

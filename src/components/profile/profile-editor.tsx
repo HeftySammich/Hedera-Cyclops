@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useWallet } from '@/components/wallet/wallet-context';
 import { Panel } from '@/components/ascii/panel';
 import { Button } from '@/components/ascii/button';
+import { Avatar } from '@/components/ascii/avatar';
 import { HolderGate } from '@/components/gating/holder-gate';
 import { ProfileHistory } from './profile-history';
 import type { CyclopsNft } from '@/lib/traits';
@@ -15,6 +16,7 @@ export function ProfileEditor() {
   const [pfpSerial, setPfpSerial] = useState<number | null>(user?.pfpSerial ?? null);
   const [ownedNfts, setOwnedNfts] = useState<CyclopsNft[]>([]);
   const [loadingNfts, setLoadingNfts] = useState(true);
+  const [pendingPfp, setPendingPfp] = useState<CyclopsNft | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -40,6 +42,8 @@ export function ProfileEditor() {
   if (!user) {
     return <HolderGate>{null}</HolderGate>;
   }
+
+  const currentPfpNft = ownedNfts.find((nft) => nft.serial === pfpSerial);
 
   async function submit() {
     setSubmitting(true);
@@ -96,36 +100,75 @@ export function ProfileEditor() {
         ) : ownedNfts.length === 0 ? (
           <p className="text-sm text-muted">Could not load NFT images.</p>
         ) : (
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
-            {ownedNfts.map((nft) => (
-              <button
-                key={nft.serial}
-                onClick={() => setPfpSerial(nft.serial)}
-                className={`relative aspect-square overflow-hidden border p-0 ${
-                  pfpSerial === nft.serial ? 'border-sage' : 'border-neutral-700'
-                }`}
-                aria-label={`Select Cyclops #${nft.serial} as PFP`}
-              >
-                <Image
-                  src={nft.metadata.image}
-                  alt={nft.metadata.name}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                  sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 16vw"
-                />
-                <span
-                  className={`absolute bottom-0 left-0 right-0 px-1 py-0.5 text-[10px] ${
-                    pfpSerial === nft.serial
-                      ? 'bg-sage text-base'
-                      : 'bg-base/80 text-muted'
+          <>
+            <div className="mb-4 flex items-center gap-3">
+              {currentPfpNft ? (
+                <>
+                  <Avatar src={currentPfpNft.metadata.image} alt={currentPfpNft.metadata.name} size={64} />
+                  <div>
+                    <p className="text-xs uppercase text-muted">Current PFP</p>
+                    <p className="text-sm text-sage">{currentPfpNft.metadata.name}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-dashed border-neutral-700 text-xs text-muted">
+                    ?
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase text-muted">Current PFP</p>
+                    <p className="text-sm text-muted">None selected</p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+              {ownedNfts.map((nft) => (
+                <button
+                  key={nft.serial}
+                  onClick={() => setPendingPfp(nft)}
+                  className={`relative aspect-square overflow-hidden border p-0 ${
+                    pfpSerial === nft.serial ? 'border-sage' : 'border-neutral-700'
                   }`}
+                  aria-label={`Select Cyclops #${nft.serial} as PFP`}
                 >
-                  #{nft.serial}
-                </span>
-              </button>
-            ))}
-          </div>
+                  <Image
+                    src={nft.metadata.image}
+                    alt={nft.metadata.name}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 16vw"
+                  />
+                  <span className="absolute bottom-0 left-0 right-0 bg-base/80 px-1 py-0.5 text-[10px] text-muted">
+                    #{nft.serial}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {pendingPfp ? (
+              <div className="mt-4 border border-sage bg-panel p-3">
+                <p className="mb-3 text-sm text-ink">
+                  Set <span className="text-sage">#{pendingPfp.serial}</span> as your PFP?
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setPfpSerial(pendingPfp.serial);
+                      setPendingPfp(null);
+                    }}
+                  >
+                    Yes
+                  </Button>
+                  <Button variant="ghost" onClick={() => setPendingPfp(null)}>
+                    No
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </>
         )}
       </Panel>
 

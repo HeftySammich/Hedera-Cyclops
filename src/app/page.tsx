@@ -28,7 +28,7 @@ export default async function HomePage() {
     <div className="flex flex-col gap-8">
       <section className="text-center">
         <Prompt live className="justify-center text-base">
-          watching the chain for movement
+          watching the network for movement
         </Prompt>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
           Hedera Cyclops
@@ -72,7 +72,7 @@ export default async function HomePage() {
           There are no “rare” traits in the traditional sense - no zombie skins, no gold editions,
           no artificially pumped rarities. Base trait distribution is balanced across the board,
           with the exception of the final 333 Custom Cyclopes. Every Cyclops is a valid key into the
-          community. The PFP is your access pass: hold one, sign in with your Hedera wallet, and
+          community. The NFT is your access pass: hold one, sign in with your Hedera wallet, and
           engage in the Town Hall, The Ledger, and The Wall.
         </p>
       </Panel>

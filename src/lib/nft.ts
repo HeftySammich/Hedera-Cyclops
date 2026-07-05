@@ -154,3 +154,12 @@ export async function resolvePfp(
   if (!match) return null;
   return getNftDetail(match.tokenId, pfpSerial);
 }
+
+/** Convenience helper: just the PFP image URL, or null if none/invalid. */
+export async function resolvePfpImageUrl(
+  walletAddress: string,
+  pfpSerial: number | null
+): Promise<string | null> {
+  const nft = await resolvePfp(walletAddress, pfpSerial);
+  return nft?.metadata.image ?? null;
+}

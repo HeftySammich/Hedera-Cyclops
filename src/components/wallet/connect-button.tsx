@@ -2,6 +2,7 @@
 
 import { useWallet } from './wallet-context';
 import { Button } from '@/components/ascii/button';
+import { Avatar } from '@/components/ascii/avatar';
 
 function shortAddress(address: string): string {
   return address.length > 12 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
@@ -13,6 +14,7 @@ export function ConnectButton() {
   if (user) {
     return (
       <div className="flex items-center gap-2 font-mono text-xs">
+        <Avatar src={user.pfpImageUrl} alt={user.username ?? user.walletAddress} size={24} />
         <span className="text-sage">{user.username ?? shortAddress(user.walletAddress)}</span>
         <Button variant="ghost" onClick={() => disconnect()}>
           Sign out

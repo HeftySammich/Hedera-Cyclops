@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useWallet } from '@/components/wallet/wallet-context';
+import { Avatar } from '@/components/ascii/avatar';
 
 export interface PostAuthor {
   id: string;
   username: string | null;
   walletAddress: string;
   pfpSerial: number | null;
+  pfpImageUrl: string | null;
 }
 
 export interface PostData {
@@ -39,9 +41,16 @@ export function PostItem({
   return (
     <article className="border border-neutral-800 p-3">
       <header className="flex items-center justify-between text-xs text-muted">
-        <span className="text-sage">
-          {post.author.username ?? shortAddress(post.author.walletAddress)}
-        </span>
+        <div className="flex items-center gap-2">
+          <Avatar
+            src={post.author.pfpImageUrl}
+            alt={post.author.username ?? post.author.walletAddress}
+            size={24}
+          />
+          <span className="text-sage">
+            {post.author.username ?? shortAddress(post.author.walletAddress)}
+          </span>
+        </div>
         <time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleString()}</time>
       </header>
       <p

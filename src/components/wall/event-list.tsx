@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useWallet } from '@/components/wallet/wallet-context';
+import { Avatar } from '@/components/ascii/avatar';
 import { EventForm } from './event-form';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -16,7 +17,7 @@ interface WallEvent {
   recurring: boolean;
   dayOfWeek: number | null;
   ownerId: string;
-  owner: { username: string | null; walletAddress: string };
+  owner: { username: string | null; walletAddress: string; pfpImageUrl: string | null };
 }
 
 export function EventList() {
@@ -52,7 +53,14 @@ export function EventList() {
           {events.map((event) => (
             <li key={event.id} className="border border-neutral-800 p-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-sage">{event.title}</span>
+                <div className="flex items-center gap-2">
+                  <Avatar
+                    src={event.owner.pfpImageUrl}
+                    alt={event.owner.username ?? event.owner.walletAddress}
+                    size={24}
+                  />
+                  <span className="text-sage">{event.title}</span>
+                </div>
                 <span className="text-xs text-muted">
                   {event.recurring && event.dayOfWeek !== null
                     ? `Every ${DAYS[event.dayOfWeek]}`

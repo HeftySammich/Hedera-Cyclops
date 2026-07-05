@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useWallet } from '@/components/wallet/wallet-context';
+import { Avatar } from '@/components/ascii/avatar';
 import { ProjectForm } from './project-form';
 
 interface Project {
@@ -11,6 +12,11 @@ interface Project {
   website: string | null;
   description: string;
   submittedById: string;
+  submittedBy: {
+    username: string | null;
+    walletAddress: string;
+    pfpImageUrl: string | null;
+  };
   vouches: { voucherId: string }[];
   trust: { vouchCount: number; score: number; tier: { key: string; label: string } };
 }
@@ -63,7 +69,14 @@ export function ProjectList() {
             return (
               <li key={project.id} className="border border-neutral-800 p-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-sage">{project.name}</span>
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      src={project.submittedBy.pfpImageUrl}
+                      alt={project.submittedBy.username ?? project.submittedBy.walletAddress}
+                      size={24}
+                    />
+                    <span className="text-sage">{project.name}</span>
+                  </div>
                   <span className="text-xs uppercase text-muted">
                     {project.trust.tier.label} · {project.trust.vouchCount} vouches
                   </span>

@@ -3,10 +3,23 @@ import { prisma } from '@/lib/prisma';
 import { getSessionUser } from '@/lib/session';
 import { jsonError } from '@/lib/api';
 import { emitPostDeleted } from '@/lib/socket';
+import { resolvePfpImageUrl } from '@/lib/nft';
 
 const AUTHOR_SELECT = {
   select: { id: true, username: true, walletAddress: true, pfpSerial: true },
 } as const;
+
+async function attachPfp<T extends { author: { walletAddress: string; pfpSerial: number | null } }>(
+  item: T
+) {
+  return {
+    ...item,
+    author: {
+      ...item.author,
+      pfpImageUrl: await resolvePfpImageUrl(item.author.walletAddress, item.author.pfpSerial),
+    },
+  };
+}
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   const post = await prisma.post.findUnique({
@@ -21,7 +34,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     include: { author: AUTHOR_SELECT, _count: { select: { likes: true } } },
   });
 
-  return NextResponse.json({ post, replies });
+  return NextResponse.json({
+    post: await attachPfp(post),
+    replies: await Promise.all(replies.map(attachPfp)),
+  });
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {

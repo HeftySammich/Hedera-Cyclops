@@ -8,6 +8,7 @@ export interface SessionUser {
   walletAddress: string;
   username: string | null;
   pfpSerial: number | null;
+  pfpImageUrl: string | null;
   isAdmin: boolean;
 }
 

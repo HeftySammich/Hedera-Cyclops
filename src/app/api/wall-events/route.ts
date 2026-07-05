@@ -5,6 +5,7 @@ import { createWallEventSchema } from '@/lib/validation';
 import { zodError, gateError, rateLimitError } from '@/lib/api';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { sanitizePlainText } from '@/lib/sanitize';
+import { resolvePfpImageUrl } from '@/lib/nft';
 
 const OWNER_SELECT = {
   select: { id: true, username: true, walletAddress: true, pfpSerial: true },
@@ -30,7 +31,17 @@ export async function GET(request: NextRequest) {
     include: { owner: OWNER_SELECT },
   });
 
-  return NextResponse.json({ events });
+  const eventsWithPfp = await Promise.all(
+    events.map(async (event) => ({
+      ...event,
+      owner: {
+        ...event.owner,
+        pfpImageUrl: await resolvePfpImageUrl(event.owner.walletAddress, event.owner.pfpSerial),
+      },
+    }))
+  );
+
+  return NextResponse.json({ events: eventsWithPfp });
 }
 
 export async function POST(request: NextRequest) {
@@ -57,5 +68,12 @@ export async function POST(request: NextRequest) {
     include: { owner: OWNER_SELECT },
   });
 
-  return NextResponse.json({ event }, { status: 201 });
+  const eventWithPfp = {
+    ...event,
+    owner: {
+      ...event.owner,
+      pfpImageUrl: await resolvePfpImageUrl(event.owner.walletAddress, event.owner.pfpSerial),
+    },
+  };
+  return NextResponse.json({ event: eventWithPfp }, { status: 201 });
 }

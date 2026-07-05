@@ -6,6 +6,7 @@ import { jsonError, zodError, gateError, rateLimitError } from '@/lib/api';
 import { sanitizeBody } from '@/lib/sanitize';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { emitPostCreated } from '@/lib/socket';
+import { resolvePfpImageUrl } from '@/lib/nft';
 
 const AUTHOR_SELECT = {
   select: { id: true, username: true, walletAddress: true, pfpSerial: true },
@@ -27,8 +28,18 @@ export async function GET(request: NextRequest) {
     },
   });
 
+  const postsWithPfp = await Promise.all(
+    posts.map(async (post) => ({
+      ...post,
+      author: {
+        ...post.author,
+        pfpImageUrl: await resolvePfpImageUrl(post.author.walletAddress, post.author.pfpSerial),
+      },
+    }))
+  );
+
   return NextResponse.json({
-    posts,
+    posts: postsWithPfp,
     nextCursor: posts.length === take ? posts[posts.length - 1].id : null,
   });
 }
@@ -58,6 +69,13 @@ export async function POST(request: NextRequest) {
     },
     include: { author: AUTHOR_SELECT, _count: { select: { likes: true, replies: true } } },
   });
+  const postWithPfp = {
+    ...post,
+    author: {
+      ...post.author,
+      pfpImageUrl: await resolvePfpImageUrl(post.author.walletAddress, post.author.pfpSerial),
+    },
+  };
 
   emitPostCreated({
     id: post.id,
@@ -68,5 +86,5 @@ export async function POST(request: NextRequest) {
     createdAt: post.createdAt.toISOString(),
   });
 
-  return NextResponse.json({ post }, { status: 201 });
+  return NextResponse.json({ post: postWithPfp }, { status: 201 });
 }
