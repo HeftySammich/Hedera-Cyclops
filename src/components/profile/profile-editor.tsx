@@ -5,6 +5,7 @@ import { useWallet } from '@/components/wallet/wallet-context';
 import { Panel } from '@/components/ascii/panel';
 import { Button } from '@/components/ascii/button';
 import { HolderGate } from '@/components/gating/holder-gate';
+import { ProfileHistory } from './profile-history';
 
 export function ProfileEditor() {
   const { user, holdsCollection, ownedSerials, refreshUser } = useWallet();
@@ -84,6 +85,8 @@ export function ProfileEditor() {
           </div>
         )}
       </Panel>
+
+      <ProfileHistory />
     </div>
   );
 }

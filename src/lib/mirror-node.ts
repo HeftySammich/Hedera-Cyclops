@@ -95,12 +95,15 @@ export async function getNftBySerial(
 
 export async function listNftsForToken(
   tokenId: string,
-  opts: { limit?: number; after?: string } = {}
+  opts: { limit?: number; next?: string | null } = {}
 ): Promise<{ nfts: MirrorNftRecord[]; next: string | null }> {
   const limit = opts.limit ?? 25;
-  const path = `/api/v1/tokens/${tokenId}/nfts?limit=${limit}${
-    opts.after ? `&serialnumber=gt:${opts.after}` : ''
-  }`;
+  // Use the Mirror Node's own `links.next` cursor when paginating; it knows
+  // whether results are ascending (gt:) or descending (lt:) and encodes any
+  // other filters. The initial call builds the path from the token id.
+  const path =
+    opts.next ??
+    `/api/v1/tokens/${tokenId}/nfts?limit=${limit}`;
   const data = await mirrorFetch<{
     nfts: MirrorNftRecord[];
     links?: { next?: string | null };

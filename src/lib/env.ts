@@ -27,17 +27,17 @@ function parsePhases(value: string | undefined): PhaseConfig[] {
 
 export const env = {
   databaseUrl: process.env.DATABASE_URL ?? '',
-  hederaNetwork: (process.env.HEDERA_NETWORK ?? 'testnet') as 'mainnet' | 'testnet',
+  hederaNetwork: (process.env.HEDERA_NETWORK ?? 'mainnet') as 'mainnet' | 'testnet',
   // Server-only HEDERA_NETWORK isn't visible in the browser bundle; wallet
   // setup runs client-side, so it needs its own NEXT_PUBLIC_ mirror.
-  publicHederaNetwork: (process.env.NEXT_PUBLIC_HEDERA_NETWORK ?? 'testnet') as
+  publicHederaNetwork: (process.env.NEXT_PUBLIC_HEDERA_NETWORK ?? 'mainnet') as
     | 'mainnet'
     | 'testnet',
   get tokenIds(): string[] {
     return csv(process.env.HEDERA_TOKEN_IDS);
   },
   mirrorNodeBaseUrl:
-    process.env.MIRROR_NODE_BASE_URL ?? 'https://testnet.mirrornode.hedera.com',
+    process.env.MIRROR_NODE_BASE_URL ?? 'https://mainnet-public.mirrornode.hedera.com',
   ipfsGatewayUrl: process.env.IPFS_GATEWAY_URL ?? 'https://ipfs.io',
   authJwtSecret: process.env.AUTH_JWT_SECRET ?? '',
   authCookieName: process.env.AUTH_COOKIE_NAME ?? 'hc_session',

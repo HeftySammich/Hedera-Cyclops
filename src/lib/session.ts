@@ -42,6 +42,14 @@ export type GateResult =
   | { ok: true; user: User }
   | { ok: false; status: 401 | 403; error: string };
 
+/** Requires any valid session (holder or not). Useful for read endpoints that
+ * expose private user data, e.g. profile history. */
+export async function requireAuth(request: NextRequest): Promise<GateResult> {
+  const user = await getSessionUser(request);
+  if (!user) return { ok: false, status: 401, error: 'Sign in with your wallet first.' };
+  return { ok: true, user };
+}
+
 /**
  * Every gated write MUST call this. It requires a valid session AND
  * re-checks live NFT holdership via Mirror Node (never trusts a cached

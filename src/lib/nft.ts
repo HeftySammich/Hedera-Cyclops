@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { env } from './env';
 import { TtlCache } from './ttl-cache';
 import {
@@ -50,28 +51,62 @@ function toCyclopsNft(record: MirrorNftRecord, metadata: NftMetadata): CyclopsNf
   };
 }
 
-/** Full collection listing across all configured token ids, for the
- * Collection page. Falls back to mock fixtures only when nothing real is
- * configured. */
-export async function getCollection(): Promise<CyclopsNft[]> {
+// Limit concurrent IPFS metadata fetches so the collection page doesn't
+// hammer the gateway (or itself) when warming the cache for the first time.
+const METADATA_CONCURRENCY = 20;
+
+async function fetchAllMetadata(records: MirrorNftRecord[]): Promise<(NftMetadata | null)[]> {
+  const pending = records.map((record) => () => fetchMetadataForRecord(record));
+  const results: (NftMetadata | null)[] = new Array(pending.length).fill(null);
+  let index = 0;
+
+  async function worker() {
+    while (index < pending.length) {
+      const slot = index++;
+      results[slot] = await pending[slot]();
+    }
+  }
+
+  await Promise.all(Array.from({ length: METADATA_CONCURRENCY }, () => worker()));
+  return results;
+}
+
+async function getCollectionUncached(): Promise<CyclopsNft[]> {
   if (env.useMockNfts) return getMockCollection();
 
-  const results: CyclopsNft[] = [];
+  const records: MirrorNftRecord[] = [];
   for (const tokenId of env.tokenIds) {
-    let after: string | undefined;
+    let next: string | null = null;
     // Mirror Node paginates; walk every page for a complete gallery.
     for (;;) {
-      const { nfts, next } = await listNftsForToken(tokenId, { after });
-      for (const record of nfts) {
-        const metadata = await fetchMetadataForRecord(record);
-        if (metadata) results.push(toCyclopsNft(record, metadata));
-      }
-      if (!next) break;
-      after = String(nfts[nfts.length - 1]?.serial_number ?? after);
+      const page = await listNftsForToken(tokenId, { next });
+      records.push(...page.nfts);
+      if (!page.next) break;
+      next = page.next;
     }
+  }
+
+  const metadataList = await fetchAllMetadata(records);
+  const results: CyclopsNft[] = [];
+  for (let i = 0; i < records.length; i++) {
+    const metadata = metadataList[i];
+    if (metadata) results.push(toCyclopsNft(records[i], metadata));
   }
   return results.sort((a, b) => a.serial - b.serial);
 }
+
+/** Full collection listing across all configured token ids, for the
+ * Collection page. Falls back to mock fixtures only when nothing real is
+ * configured.
+ *
+ * Cached across requests because the metadata is immutable; ownership updates
+ * within the 5-minute window are acceptable for a gallery view. Holder gating
+ * always re-verifies ownership live, never from this cache. */
+export const getCollection = unstable_cache(
+  getCollectionUncached,
+  ['cyclops-collection', env.tokenIds.join(','), env.ipfsGatewayUrl],
+  { revalidate: 300, tags: ['cyclops-collection'] }
+);
 
 /** Total minted count across all configured token ids, for the homepage
  * mint-progress indicator. */

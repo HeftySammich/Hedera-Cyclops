@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
 import { env } from './env';
+import { ALLOWED_UPLOAD_MIME_TYPES, MAX_UPLOAD_BYTES } from './upload';
 
 // Generic S3-compatible client — works identically against Cloudflare R2,
 // AWS S3, or MinIO. Never hardcode a vendor-specific SDK quirk here.
@@ -16,8 +17,7 @@ function getClient(): S3Client {
   });
 }
 
-export const ALLOWED_UPLOAD_MIME_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8MB
+export { ALLOWED_UPLOAD_MIME_TYPES, MAX_UPLOAD_BYTES };
 
 export interface UploadValidationError {
   error: string;

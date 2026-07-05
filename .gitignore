@@ -40,3 +40,4 @@ yarn-error.log*
 .idea
 .vscode
 *.swp
+.venv-favicon

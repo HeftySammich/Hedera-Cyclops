@@ -21,8 +21,8 @@ export default async function HomePage() {
           Hedera Cyclops
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-sm text-muted">
-          An anonymous, community-first PFP collection on Hedera Hashgraph. One eye open, always
-          watching. No teams, no faces — just holders.
+          An anonymously developed, community-first NFT collection on Hedera Hashgraph. No teams, no
+          faces — just holders.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/collection">
@@ -52,6 +52,15 @@ export default async function HomePage() {
             ))}
           </ul>
         ) : null}
+      </Panel>
+
+      <Panel title="About the Collection">
+        <p className="text-sm text-muted">
+          There are no “rare” traits in the traditional sense — no zombie skins, no gold editions,
+          no artificially pumped rarities. Trait distribution is balanced across the board so every
+          Cyclops is a valid key into the community. The PFP is your access pass: hold one, sign in
+          with your Hedera wallet, and engage in the Town Hall, The Ledger, and The Wall.
+        </p>
       </Panel>
 
       <div className="grid gap-4 sm:grid-cols-2">

@@ -46,7 +46,7 @@ async function getConnector() {
   connector = new DAppConnector(
     {
       name: 'Hedera Cyclops',
-      description: 'Anonymous community-first PFP project on Hedera.',
+      description: 'An anonymously developed, community-first NFT collection on Hedera.',
       url: env.appUrl,
       icons: [`${env.appUrl}/favicon.ico`],
     },
