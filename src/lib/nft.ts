@@ -1,8 +1,10 @@
 import { unstable_cache } from 'next/cache';
 import { env } from './env';
+import { fetchWithRetry } from './fetch-retry';
 import { TtlCache } from './ttl-cache';
 import {
   getNftBySerial,
+  getNftsForAccountAndToken,
   getOwnedSerials,
   getTokenSupply,
   listNftsForToken,
@@ -30,19 +32,22 @@ function resolveIpfsUri(uri: string): string {
 async function fetchMetadataForRecord(record: MirrorNftRecord): Promise<NftMetadata | null> {
   const cacheKey = `${record.token_id}:${record.serial_number}`;
   return metadataCache.getOrSet(cacheKey, async () => {
-    try {
-      const uri = resolveIpfsUri(decodeMetadataUri(record.metadata));
-      const res = await fetch(uri);
-      if (!res.ok) return null;
-      const json = await res.json();
-      const metadata = parseNftMetadata(json);
-      if (!metadata) return null;
-      // Resolve ipfs:// image URIs so the browser can load them via the
-      // configured gateway; leave non-ipfs URIs untouched.
-      return { ...metadata, image: resolveIpfsUri(metadata.image) };
-    } catch {
-      return null;
+    const uri = resolveIpfsUri(decodeMetadataUri(record.metadata));
+    const res = await fetchWithRetry(
+      uri,
+      {},
+      { maxAttempts: 5, baseDelayMs: 250, maxDelayMs: 10_000 }
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      throw new Error(`Metadata fetch failed (${res.status}): ${uri}`);
     }
+    const json = await res.json();
+    const metadata = parseNftMetadata(json);
+    if (!metadata) return null;
+    // Resolve ipfs:// image URIs so the browser can load them via the
+    // configured gateway; leave non-ipfs URIs untouched.
+    return { ...metadata, image: resolveIpfsUri(metadata.image) };
   });
 }
 
@@ -67,7 +72,11 @@ async function fetchAllMetadata(records: MirrorNftRecord[]): Promise<(NftMetadat
   async function worker() {
     while (index < pending.length) {
       const slot = index++;
-      results[slot] = await pending[slot]();
+      try {
+        results[slot] = await pending[slot]();
+      } catch {
+        results[slot] = null;
+      }
     }
   }
 
@@ -140,6 +149,31 @@ export async function getOwnedSerialsForWallet(
 ): Promise<{ tokenId: string; serial: number }[]> {
   if (env.useMockNfts) return getMockOwnedSerials(walletAddress);
   return getOwnedSerials(walletAddress);
+}
+
+/** Full NFT data for every Cyclops a wallet currently owns. Uses paginated
+ * Mirror Node reads (not one request per serial) to avoid rate limits for
+ * treasury-sized wallets. */
+export async function getOwnedNftsForWallet(walletAddress: string): Promise<CyclopsNft[]> {
+  if (env.useMockNfts) {
+    return getMockOwnedSerials(walletAddress)
+      .map(({ serial }) => getMockNftBySerial(serial))
+      .filter((nft): nft is CyclopsNft => nft !== null);
+  }
+
+  const records: MirrorNftRecord[] = [];
+  for (const tokenId of env.tokenIds) {
+    const nfts = await getNftsForAccountAndToken(tokenId, walletAddress);
+    records.push(...nfts);
+  }
+
+  const metadataList = await fetchAllMetadata(records);
+  const results: CyclopsNft[] = [];
+  for (let i = 0; i < records.length; i++) {
+    const metadata = metadataList[i];
+    if (metadata) results.push(toCyclopsNft(records[i], metadata));
+  }
+  return results.sort((a, b) => a.serial - b.serial);
 }
 
 /** Resolve a user's chosen PFP serial to full NFT data, re-validating that

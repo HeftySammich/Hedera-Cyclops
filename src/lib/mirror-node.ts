@@ -1,5 +1,6 @@
 import { env } from './env';
 import { TtlCache } from './ttl-cache';
+import { fetchWithRetry } from './fetch-retry';
 
 // All Hedera chain reads go through the public Mirror Node REST API — no API
 // key required. Ownership is NEVER trusted from the client; every gated write
@@ -24,7 +25,11 @@ const nftListCache = new TtlCache<MirrorNftRecord[]>(HOLDERSHIP_TTL_MS);
 
 async function mirrorFetch<T>(path: string): Promise<T | null> {
   const url = `${env.mirrorNodeBaseUrl}${path}`;
-  const res = await fetch(url, { headers: { accept: 'application/json' } });
+  const res = await fetchWithRetry(
+    url,
+    { headers: { accept: 'application/json' } },
+    { maxAttempts: 5, baseDelayMs: 500 }
+  );
   if (res.status === 404) return null;
   if (!res.ok) {
     throw new Error(`Mirror Node request failed (${res.status}): ${url}`);
