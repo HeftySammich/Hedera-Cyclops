@@ -1,19 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useWallet } from '@/components/wallet/wallet-context';
 import { Panel } from '@/components/ascii/panel';
 import { Button } from '@/components/ascii/button';
 import { HolderGate } from '@/components/gating/holder-gate';
 import { ProfileHistory } from './profile-history';
+import type { CyclopsNft } from '@/lib/traits';
 
 export function ProfileEditor() {
-  const { user, holdsCollection, ownedSerials, refreshUser } = useWallet();
+  const { user, holdsCollection, refreshUser } = useWallet();
   const [username, setUsername] = useState(user?.username ?? '');
   const [pfpSerial, setPfpSerial] = useState<number | null>(user?.pfpSerial ?? null);
+  const [ownedNfts, setOwnedNfts] = useState<CyclopsNft[]>([]);
+  const [loadingNfts, setLoadingNfts] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!user || !holdsCollection) {
+      setLoadingNfts(false);
+      return;
+    }
+    let cancelled = false;
+    fetch('/api/profile/owned-nfts')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setOwnedNfts(data.nfts ?? []);
+      })
+      .catch(() => setError('Could not load owned Cyclopes.'))
+      .finally(() => setLoadingNfts(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [user, holdsCollection]);
 
   if (!user) {
     return <HolderGate>{null}</HolderGate>;
@@ -69,17 +91,38 @@ export function ProfileEditor() {
           <p className="text-sm text-muted">
             No owned Cyclops found on this wallet - mint or acquire one to set a PFP.
           </p>
+        ) : loadingNfts ? (
+          <p className="text-sm text-muted">Loading your Cyclopes…</p>
+        ) : ownedNfts.length === 0 ? (
+          <p className="text-sm text-muted">Could not load NFT images.</p>
         ) : (
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-            {ownedSerials.map(({ serial }) => (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+            {ownedNfts.map((nft) => (
               <button
-                key={serial}
-                onClick={() => setPfpSerial(serial)}
-                className={`border p-1 text-xs ${
-                  pfpSerial === serial ? 'border-sage text-sage' : 'border-neutral-700 text-muted'
+                key={nft.serial}
+                onClick={() => setPfpSerial(nft.serial)}
+                className={`relative aspect-square overflow-hidden border p-0 ${
+                  pfpSerial === nft.serial ? 'border-sage' : 'border-neutral-700'
                 }`}
+                aria-label={`Select Cyclops #${nft.serial} as PFP`}
               >
-                #{serial}
+                <Image
+                  src={nft.metadata.image}
+                  alt={nft.metadata.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                  sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 16vw"
+                />
+                <span
+                  className={`absolute bottom-0 left-0 right-0 px-1 py-0.5 text-[10px] ${
+                    pfpSerial === nft.serial
+                      ? 'bg-sage text-base'
+                      : 'bg-base/80 text-muted'
+                  }`}
+                >
+                  #{nft.serial}
+                </span>
               </button>
             ))}
           </div>

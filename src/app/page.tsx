@@ -14,7 +14,7 @@ function phaseSubtitle(name: string): string {
     case 'Phase 2':
       return '1,500 Female Cyclopes';
     case 'Phase 3':
-      return '333 Custom 1:1';
+      return '333 Custom Cyclopes';
     default:
       return '';
   }
@@ -70,9 +70,10 @@ export default async function HomePage() {
       <Panel title="About the Collection">
         <p className="text-sm text-muted">
           There are no “rare” traits in the traditional sense - no zombie skins, no gold editions,
-          no artificially pumped rarities. Trait distribution is balanced across the board so every
-          Cyclops is a valid key into the community. The PFP is your access pass: hold one, sign in
-          with your Hedera wallet, and engage in the Town Hall, The Ledger, and The Wall.
+          no artificially pumped rarities. Base trait distribution is balanced across the board,
+          with the exception of the final 333 Custom Cyclopes. Every Cyclops is a valid key into the
+          community. The PFP is your access pass: hold one, sign in with your Hedera wallet, and
+          engage in the Town Hall, The Ledger, and The Wall.
         </p>
       </Panel>
 
