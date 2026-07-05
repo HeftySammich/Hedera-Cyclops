@@ -17,6 +17,8 @@ export function ProfileEditor() {
   const [ownedNfts, setOwnedNfts] = useState<CyclopsNft[]>([]);
   const [loadingNfts, setLoadingNfts] = useState(true);
   const [pendingPfp, setPendingPfp] = useState<CyclopsNft | null>(null);
+  const [savingPfpSerial, setSavingPfpSerial] = useState<number | null>(null);
+  const [pfpNotice, setPfpNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -55,6 +57,34 @@ export function ProfileEditor() {
   }
 
   const currentPfpNft = ownedNfts.find((nft) => nft.serial === pfpSerial);
+
+  async function savePfp(serial: number) {
+    setSavingPfpSerial(serial);
+    setPfpNotice(null);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pfpSerial: serial }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? 'Failed to update PFP.');
+      }
+      setPfpSerial(serial);
+      await refreshUser();
+      setPfpNotice({ type: 'success', text: 'PFP updated.' });
+      setTimeout(() => setPfpNotice(null), 3000);
+    } catch (err) {
+      setPfpNotice({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to update PFP.',
+      });
+    } finally {
+      setSavingPfpSerial(null);
+      setPendingPfp(null);
+    }
+  }
 
   async function submit() {
     setSubmitting(true);
@@ -120,6 +150,16 @@ export function ProfileEditor() {
           <p className="text-sm text-muted">Could not load NFT images.</p>
         ) : (
           <>
+            {pfpNotice ? (
+              <p
+                className={`mb-3 text-xs ${
+                  pfpNotice.type === 'success' ? 'text-sage' : 'text-red-400'
+                }`}
+              >
+                {pfpNotice.text}
+              </p>
+            ) : null}
+
             <div className="mb-4 flex items-center gap-3">
               {currentPfpNft ? (
                 <>
@@ -164,31 +204,38 @@ export function ProfileEditor() {
                     />
                     {isPending ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-base/90 p-1">
-                        <p className="mb-2 text-center text-[10px] leading-tight text-ink">
-                          Set as PFP?
-                        </p>
-                        <div className="flex gap-1">
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPfpSerial(nft.serial);
-                              setPendingPfp(null);
-                            }}
-                            className="px-2 py-0.5 text-[10px]"
-                          >
-                            Yes
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPendingPfp(null);
-                            }}
-                            className="px-2 py-0.5 text-[10px]"
-                          >
-                            No
-                          </Button>
-                        </div>
+                        {savingPfpSerial === nft.serial ? (
+                          <p className="text-center text-[10px] leading-tight text-ink">Saving…</p>
+                        ) : (
+                          <>
+                            <p className="mb-2 text-center text-[10px] leading-tight text-ink">
+                              Set as PFP?
+                            </p>
+                            <div className="flex gap-1">
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  savePfp(nft.serial);
+                                }}
+                                disabled={savingPfpSerial != null}
+                                className="px-2 py-0.5 text-[10px]"
+                              >
+                                Yes
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPendingPfp(null);
+                                }}
+                                disabled={savingPfpSerial != null}
+                                className="px-2 py-0.5 text-[10px]"
+                              >
+                                No
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <span className="absolute bottom-0 left-0 right-0 bg-base/80 px-1 py-0.5 text-[10px] text-muted">
