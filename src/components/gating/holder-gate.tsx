@@ -12,7 +12,7 @@ import { Button } from '@/components/ascii/button';
  * regardless of what this component renders.
  */
 export function HolderGate({ children }: { children: ReactNode }) {
-  const { user, holdsCollection, isConnecting, isSigningIn, error, signIn } = useWallet();
+  const { user, holdsCollection, isSigningIn, error, signIn } = useWallet();
 
   if (user && holdsCollection) return <>{children}</>;
 
@@ -24,8 +24,8 @@ export function HolderGate({ children }: { children: ReactNode }) {
           : 'Connect your wallet, then sign the message to verify ownership and continue.'}
       </p>
       {!user ? (
-        <Button onClick={() => signIn()} disabled={isConnecting || isSigningIn}>
-          {isConnecting || isSigningIn ? 'Connecting…' : 'Connect Wallet'}
+        <Button onClick={() => signIn()} disabled={isSigningIn}>
+          {isSigningIn ? 'Connecting…' : 'Connect Wallet'}
         </Button>
       ) : null}
       {error ? <p className="mt-3 text-xs text-red-400">{error}</p> : null}

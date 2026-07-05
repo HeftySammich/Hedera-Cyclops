@@ -8,7 +8,7 @@ function shortAddress(address: string): string {
 }
 
 export function ConnectButton() {
-  const { user, accountId, isConnecting, isSigningIn, connect, signIn, disconnect } = useWallet();
+  const { user, accountId, isSigningIn, signIn, disconnect } = useWallet();
 
   if (user) {
     return (
@@ -30,8 +30,8 @@ export function ConnectButton() {
   }
 
   return (
-    <Button onClick={() => connect()} disabled={isConnecting}>
-      {isConnecting ? 'Connecting…' : 'Connect Wallet'}
+    <Button onClick={() => signIn()} disabled={isSigningIn}>
+      {isSigningIn ? 'Connecting…' : 'Connect Wallet'}
     </Button>
   );
 }

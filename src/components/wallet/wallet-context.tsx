@@ -16,13 +16,11 @@ interface WalletState {
   user: SessionUser | null;
   holdsCollection: boolean;
   ownedSerials: { tokenId: string; serial: number }[];
-  isConnecting: boolean;
   isSigningIn: boolean;
   error: string | null;
 }
 
 interface WalletContextValue extends WalletState {
-  connect: () => Promise<void>;
   signIn: () => Promise<void>;
   disconnect: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -35,7 +33,6 @@ const INITIAL_STATE: WalletState = {
   user: null,
   holdsCollection: false,
   ownedSerials: [],
-  isConnecting: false,
   isSigningIn: false,
   error: null,
 };
@@ -60,28 +57,17 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  const connect = useCallback(async () => {
-    setState((s) => ({ ...s, isConnecting: true, error: null }));
-    try {
-      const accountId = await connectWallet();
-      setState((s) => ({ ...s, accountId, isConnecting: false }));
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        isConnecting: false,
-        error: err instanceof Error ? err.message : 'Failed to connect wallet.',
-      }));
-    }
-  }, []);
-
   const signIn = useCallback(async () => {
-    if (!state.accountId) {
-      await connect();
-    }
     setState((s) => ({ ...s, isSigningIn: true, error: null }));
     try {
-      const accountId = state.accountId ?? (await connectWallet());
-      if (!accountId) throw new Error('No wallet account available.');
+      // Pair the wallet first if we don't have an account yet, then immediately
+      // request the sign-in signature so the user only clicks one button.
+      let accountId = state.accountId;
+      if (!accountId) {
+        accountId = await connectWallet();
+        if (!accountId) throw new Error('No wallet account available.');
+        setState((s) => ({ ...s, accountId }));
+      }
 
       const nonceRes = await fetch('/api/auth/nonce', {
         method: 'POST',
@@ -112,7 +98,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         error: err instanceof Error ? err.message : 'Sign-in failed.',
       }));
     }
-  }, [state.accountId, connect, refreshUser]);
+  }, [state.accountId, refreshUser]);
 
   const disconnect = useCallback(async () => {
     await disconnectWallet().catch(() => undefined);
@@ -121,8 +107,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<WalletContextValue>(
-    () => ({ ...state, connect, signIn, disconnect, refreshUser }),
-    [state, connect, signIn, disconnect, refreshUser]
+    () => ({ ...state, signIn, disconnect, refreshUser }),
+    [state, signIn, disconnect, refreshUser]
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
