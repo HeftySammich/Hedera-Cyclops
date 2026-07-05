@@ -9,6 +9,33 @@ import { EventForm } from './event-form';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+function formatRecurrence(event: WallEvent): string {
+  if (!event.recurring) {
+    return format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a");
+  }
+  const freq = event.recurrenceFrequency;
+  if (freq === 'monthly') {
+    const day = new Date(event.startsAt).getDate();
+    const suffix =
+      day === 1 || day === 21 || day === 31
+        ? 'st'
+        : day === 2 || day === 22
+          ? 'nd'
+          : day === 3 || day === 23
+            ? 'rd'
+            : 'th';
+    return `Monthly on the ${day}${suffix}`;
+  }
+  if (event.dayOfWeek == null) {
+    return format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a");
+  }
+  const dayName = DAYS[event.dayOfWeek];
+  if (freq === 'biweekly') return `Every other ${dayName}`;
+  return `Every ${dayName}`;
+}
+
+type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly';
+
 interface WallEvent {
   id: string;
   title: string;
@@ -16,6 +43,7 @@ interface WallEvent {
   xSpaceUrl: string;
   startsAt: string;
   recurring: boolean;
+  recurrenceFrequency: RecurrenceFrequency | null;
   dayOfWeek: number | null;
   ownerId: string;
   owner: { username: string | null; walletAddress: string; pfpImageUrl: string | null };
@@ -63,9 +91,7 @@ export function EventList() {
                   <span className="text-sage">{event.title}</span>
                 </div>
                 <span className="text-xs text-muted">
-                  {event.recurring && event.dayOfWeek !== null
-                    ? `Every ${DAYS[event.dayOfWeek]}`
-                    : format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a")}
+                  {formatRecurrence(event)}
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted">{event.projectName}</p>

@@ -54,13 +54,27 @@ describe('createWallEventSchema', () => {
     startsAt: new Date().toISOString(),
   };
 
-  it('requires dayOfWeek when recurring is true', () => {
-    const result = createWallEventSchema.safeParse({ ...base, recurring: true });
+  it('requires recurrenceFrequency when recurring is true', () => {
+    const result = createWallEventSchema.safeParse({ ...base, recurring: true, dayOfWeek: 2 });
     expect(result.success).toBe(false);
   });
 
-  it('accepts a recurring event with a dayOfWeek', () => {
-    const result = createWallEventSchema.safeParse({ ...base, recurring: true, dayOfWeek: 2 });
+  it('accepts a weekly recurring event with a dayOfWeek', () => {
+    const result = createWallEventSchema.safeParse({
+      ...base,
+      recurring: true,
+      recurrenceFrequency: 'weekly',
+      dayOfWeek: 2,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a monthly recurring event without dayOfWeek', () => {
+    const result = createWallEventSchema.safeParse({
+      ...base,
+      recurring: true,
+      recurrenceFrequency: 'monthly',
+    });
     expect(result.success).toBe(true);
   });
 

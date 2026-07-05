@@ -39,6 +39,8 @@ export const updateProfileSchema = z.object({
   pfpSerial: z.number().int().positive().nullable().optional(),
 });
 
+const RECURRENCE_FREQUENCIES = ['weekly', 'biweekly', 'monthly'] as const;
+
 export const createWallEventSchema = z
   .object({
     title: z.string().trim().min(1).max(120),
@@ -46,12 +48,33 @@ export const createWallEventSchema = z
     xSpaceUrl: z.string().url(),
     startsAt: z.coerce.date(),
     recurring: z.boolean().default(false),
+    recurrenceFrequency: z.enum(['', ...RECURRENCE_FREQUENCIES]).optional(),
     dayOfWeek: z.number().int().min(0).max(6).nullable().optional(),
   })
-  .refine((data) => !data.recurring || data.dayOfWeek != null, {
-    message: 'Recurring events must specify a dayOfWeek',
-    path: ['dayOfWeek'],
-  });
+  .transform((data) => {
+    // Treat empty-string frequency as non-recurring for form convenience.
+    const frequency = data.recurrenceFrequency || null;
+    return { ...data, recurrenceFrequency: frequency };
+  })
+  .refine(
+    (data) =>
+      !data.recurring ||
+      RECURRENCE_FREQUENCIES.includes(data.recurrenceFrequency as any),
+    {
+      message: 'Recurring events must select a frequency',
+      path: ['recurrenceFrequency'],
+    }
+  )
+  .refine(
+    (data) =>
+      !data.recurring ||
+      data.recurrenceFrequency === 'monthly' ||
+      data.dayOfWeek != null,
+    {
+      message: 'Weekly/bi-weekly events must specify a dayOfWeek',
+      path: ['dayOfWeek'],
+    }
+  );
 
 export const createProjectSchema = z.object({
   name: z.string().trim().min(1).max(120),

@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       xSpaceUrl: parsed.data.xSpaceUrl,
       startsAt: parsed.data.startsAt,
       recurring: parsed.data.recurring,
+      recurrenceFrequency: parsed.data.recurrenceFrequency ?? null,
       dayOfWeek: parsed.data.dayOfWeek ?? null,
     },
     include: { owner: OWNER_SELECT },

@@ -7,34 +7,55 @@ import { HolderGate } from '@/components/gating/holder-gate';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const FREQUENCIES = [
+  { value: '', label: 'Does not repeat' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every other week' },
+  { value: 'monthly', label: 'Monthly' },
+] as const;
+
 export function EventForm({ onCreated }: { onCreated?: () => void }) {
   const { user, holdsCollection } = useWallet();
   const [title, setTitle] = useState('');
   const [projectName, setProjectName] = useState('');
   const [xSpaceUrl, setXSpaceUrl] = useState('');
   const [startsAt, setStartsAt] = useState('');
-  const [recurring, setRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<string>('');
   const [dayOfWeek, setDayOfWeek] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!user || !holdsCollection) return <HolderGate>{null}</HolderGate>;
 
+  const recurring = frequency !== '';
+  const showDayOfWeek = recurring && (frequency === 'weekly' || frequency === 'biweekly');
+  const monthlyDay = recurring && frequency === 'monthly' && startsAt
+    ? new Date(startsAt).getDate()
+    : null;
+
   async function submit() {
     setSubmitting(true);
     setError(null);
     try {
+      const body: Record<string, unknown> = {
+        title,
+        projectName,
+        xSpaceUrl,
+        startsAt: new Date(startsAt).toISOString(),
+        recurring,
+      };
+
+      if (recurring) {
+        body.recurrenceFrequency = frequency;
+        if (showDayOfWeek) {
+          body.dayOfWeek = dayOfWeek;
+        }
+      }
+
       const res = await fetch('/api/wall-events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          projectName,
-          xSpaceUrl,
-          startsAt: new Date(startsAt).toISOString(),
-          recurring,
-          dayOfWeek: recurring ? dayOfWeek : null,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -44,6 +65,8 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
       setProjectName('');
       setXSpaceUrl('');
       setStartsAt('');
+      setFrequency('');
+      setDayOfWeek(0);
       onCreated?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create event.');
@@ -81,15 +104,18 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
         value={startsAt}
         onChange={(e) => setStartsAt(e.target.value)}
       />
-      <label className="flex items-center gap-2 text-xs text-muted">
-        <input
-          type="checkbox"
-          checked={recurring}
-          onChange={(e) => setRecurring(e.target.checked)}
-        />
-        Recurs weekly
-      </label>
-      {recurring ? (
+      <select
+        className={inputClass}
+        value={frequency}
+        onChange={(e) => setFrequency(e.target.value)}
+      >
+        {FREQUENCIES.map((f) => (
+          <option key={f.value} value={f.value}>
+            {f.label}
+          </option>
+        ))}
+      </select>
+      {showDayOfWeek ? (
         <select
           className={inputClass}
           value={dayOfWeek}
@@ -101,6 +127,18 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
             </option>
           ))}
         </select>
+      ) : null}
+      {monthlyDay ? (
+        <p className="text-xs text-muted">
+          Repeats monthly on the {monthlyDay}
+          {monthlyDay === 1 || monthlyDay === 21 || monthlyDay === 31
+            ? 'st'
+            : monthlyDay === 2 || monthlyDay === 22
+              ? 'nd'
+            : monthlyDay === 3 || monthlyDay === 23
+              ? 'rd'
+              : 'th'}
+        </p>
       ) : null}
       {error ? <span className="text-xs text-red-400">{error}</span> : null}
       <Button
