@@ -67,7 +67,7 @@ export function ProfileEditor() {
       <Panel title="PFP">
         {!holdsCollection ? (
           <p className="text-sm text-muted">
-            No owned Cyclops found on this wallet — mint or acquire one to set a PFP.
+            No owned Cyclops found on this wallet - mint or acquire one to set a PFP.
           </p>
         ) : (
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">

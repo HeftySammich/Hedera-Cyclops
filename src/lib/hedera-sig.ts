@@ -50,7 +50,7 @@ export function buildSignInMessage(params: {
   issuedAt: string;
 }): string {
   return [
-    'Hedera Cyclops — sign in to verify wallet ownership.',
+    'Hedera Cyclops - sign in to verify wallet ownership.',
     `Account: ${params.accountId}`,
     `Nonce: ${params.nonce}`,
     `Issued: ${params.issuedAt}`,

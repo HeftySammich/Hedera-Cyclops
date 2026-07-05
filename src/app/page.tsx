@@ -7,6 +7,19 @@ import { Button } from '@/components/ascii/button';
 
 export const revalidate = 30;
 
+function phaseSubtitle(name: string): string {
+  switch (name.trim()) {
+    case 'Phase 1':
+      return '1,500 Cyclopes';
+    case 'Phase 2':
+      return '1,500 Female Cyclopes';
+    case 'Phase 3':
+      return '333 Custom 1:1';
+    default:
+      return '';
+  }
+}
+
 export default async function HomePage() {
   const minted = await getMintedCount();
   const pct = env.totalSupply > 0 ? Math.min(100, Math.round((minted / env.totalSupply) * 100)) : 0;
@@ -22,7 +35,7 @@ export default async function HomePage() {
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-sm text-muted">
           An anonymously developed, community-first NFT collection on Hedera Hashgraph. No teams, no
-          faces — just holders.
+          faces - just holders.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/collection">
@@ -47,7 +60,7 @@ export default async function HomePage() {
             {env.phases.map((phase) => (
               <li key={phase.name} className="border border-neutral-800 px-3 py-2 text-xs">
                 <div className="text-sage">{phase.name}</div>
-                <div className="text-muted">{phase.target.toLocaleString()} target</div>
+                <div className="text-muted">{phaseSubtitle(phase.name)}</div>
               </li>
             ))}
           </ul>
@@ -56,7 +69,7 @@ export default async function HomePage() {
 
       <Panel title="About the Collection">
         <p className="text-sm text-muted">
-          There are no “rare” traits in the traditional sense — no zombie skins, no gold editions,
+          There are no “rare” traits in the traditional sense - no zombie skins, no gold editions,
           no artificially pumped rarities. Trait distribution is balanced across the board so every
           Cyclops is a valid key into the community. The PFP is your access pass: hold one, sign in
           with your Hedera wallet, and engage in the Town Hall, The Ledger, and The Wall.
@@ -69,7 +82,7 @@ export default async function HomePage() {
         </Panel>
         <Panel title="The Ledger">
           <p className="text-sm text-muted">
-            A trust registry for Hedera projects — one wallet, one vouch.
+            A trust registry for Hedera projects - one wallet, one vouch.
           </p>
         </Panel>
         <Panel title="The Wall">
