@@ -124,50 +124,62 @@ export function ProfileEditor() {
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
-              {ownedNfts.map((nft) => (
-                <button
-                  key={nft.serial}
-                  onClick={() => setPendingPfp(nft)}
-                  className={`relative aspect-square overflow-hidden border p-0 ${
-                    pfpSerial === nft.serial ? 'border-sage' : 'border-neutral-700'
-                  }`}
-                  aria-label={`Select Cyclops #${nft.serial} as PFP`}
-                >
-                  <Image
-                    src={nft.metadata.image}
-                    alt={nft.metadata.name}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 16vw"
-                  />
-                  <span className="absolute bottom-0 left-0 right-0 bg-base/80 px-1 py-0.5 text-[10px] text-muted">
-                    #{nft.serial}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {pendingPfp ? (
-              <div className="mt-4 border border-sage bg-panel p-3">
-                <p className="mb-3 text-sm text-ink">
-                  Set <span className="text-sage">#{pendingPfp.serial}</span> as your PFP?
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => {
-                      setPfpSerial(pendingPfp.serial);
-                      setPendingPfp(null);
-                    }}
+              {ownedNfts.map((nft) => {
+                const isPending = pendingPfp?.serial === nft.serial;
+                return (
+                  <button
+                    key={nft.serial}
+                    onClick={() => setPendingPfp(nft)}
+                    className={`relative aspect-square overflow-hidden border p-0 ${
+                      pfpSerial === nft.serial ? 'border-sage' : 'border-neutral-700'
+                    }`}
+                    aria-label={`Select Cyclops #${nft.serial} as PFP`}
                   >
-                    Yes
-                  </Button>
-                  <Button variant="ghost" onClick={() => setPendingPfp(null)}>
-                    No
-                  </Button>
-                </div>
-              </div>
-            ) : null}
+                    <Image
+                      src={nft.metadata.image}
+                      alt={nft.metadata.name}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                      sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 16vw"
+                    />
+                    {isPending ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-base/90 p-1">
+                        <p className="mb-2 text-center text-[10px] leading-tight text-ink">
+                          Set as PFP?
+                        </p>
+                        <div className="flex gap-1">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPfpSerial(nft.serial);
+                              setPendingPfp(null);
+                            }}
+                            className="px-2 py-0.5 text-[10px]"
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPendingPfp(null);
+                            }}
+                            className="px-2 py-0.5 text-[10px]"
+                          >
+                            No
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="absolute bottom-0 left-0 right-0 bg-base/80 px-1 py-0.5 text-[10px] text-muted">
+                        #{nft.serial}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </>
         )}
       </Panel>
