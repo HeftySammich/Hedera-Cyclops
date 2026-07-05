@@ -58,7 +58,7 @@ export function TownHallFeed() {
       {loading ? (
         <p className="text-sm text-muted">Loading feed…</p>
       ) : posts.length === 0 ? (
-        <p className="text-sm text-muted">No posts yet. Be the first anon to speak.</p>
+        <p className="text-sm text-muted">No posts yet. Be the first to speak.</p>
       ) : (
         posts.map((post) => <PostItem key={post.id} post={post} onLike={handleLike} />)
       )}

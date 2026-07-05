@@ -34,7 +34,8 @@ export const updateProfileSchema = z.object({
     .min(3, 'Username must be at least 3 characters')
     .max(24, 'Username must be at most 24 characters')
     .regex(/^[a-zA-Z0-9_]+$/, 'Letters, numbers, and underscores only')
-    .optional(),
+    .optional()
+    .nullable(),
   pfpSerial: z.number().int().positive().nullable().optional(),
 });
 

@@ -17,7 +17,7 @@ function formatBytes(bytes: number): string {
 export function PostComposer({
   parentId = null,
   onPosted,
-  placeholder = "What's happening, anon?",
+  placeholder = "What's happening?",
 }: {
   parentId?: string | null;
   onPosted?: () => void;

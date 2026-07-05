@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useWallet } from '@/components/wallet/wallet-context';
 import { Avatar } from '@/components/ascii/avatar';
+import { userDisplayName } from '@/lib/display-name';
 import { ProjectForm } from './project-form';
 
 interface Project {
@@ -72,7 +73,10 @@ export function ProjectList() {
                   <div className="flex items-center gap-2">
                     <Avatar
                       src={project.submittedBy.pfpImageUrl}
-                      alt={project.submittedBy.username ?? project.submittedBy.walletAddress}
+                      alt={userDisplayName(
+                        project.submittedBy.username,
+                        project.submittedBy.walletAddress
+                      )}
                       size={24}
                     />
                     <span className="text-sage">{project.name}</span>

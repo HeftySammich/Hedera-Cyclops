@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useWallet } from '@/components/wallet/wallet-context';
 import { Avatar } from '@/components/ascii/avatar';
+import { userDisplayName } from '@/lib/display-name';
 import { EventForm } from './event-form';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -56,7 +57,7 @@ export function EventList() {
                 <div className="flex items-center gap-2">
                   <Avatar
                     src={event.owner.pfpImageUrl}
-                    alt={event.owner.username ?? event.owner.walletAddress}
+                    alt={userDisplayName(event.owner.username, event.owner.walletAddress)}
                     size={24}
                   />
                   <span className="text-sage">{event.title}</span>

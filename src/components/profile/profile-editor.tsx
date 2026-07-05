@@ -30,11 +30,14 @@ export function ProfileEditor() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !holdsCollection) {
+    if (!user) return; // still resolving session; keep spinner
+    if (!holdsCollection) {
+      setOwnedNfts([]);
       setLoadingNfts(false);
       return;
     }
     let cancelled = false;
+    setLoadingNfts(true);
     fetch('/api/profile/owned-nfts')
       .then((res) => res.json())
       .then((data) => {
@@ -59,10 +62,13 @@ export function ProfileEditor() {
     setSaved(false);
     try {
       const trimmedUsername = username.trim();
+      const usernameChanged = trimmedUsername !== (user?.username ?? '');
       const usernamePayload =
-        trimmedUsername.length >= 3 && trimmedUsername !== (user?.username ?? '')
-          ? { username: trimmedUsername }
-          : {};
+        usernameChanged && trimmedUsername.length === 0
+          ? { username: null }
+          : usernameChanged && trimmedUsername.length >= 3
+            ? { username: trimmedUsername }
+            : {};
       const pfpPayload =
         pfpSerial !== user?.pfpSerial ? { pfpSerial } : {};
 
@@ -91,7 +97,7 @@ export function ProfileEditor() {
         <input
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="anon"
+          placeholder="User"
           className="mb-3 w-full border border-neutral-700 bg-base px-2 py-1 text-sm text-ink placeholder:text-muted"
         />
         <label className="mb-1 block text-xs uppercase text-muted">Wallet</label>
@@ -109,7 +115,7 @@ export function ProfileEditor() {
             No owned Cyclops found on this wallet - mint or acquire one to set a PFP.
           </p>
         ) : loadingNfts ? (
-          <p className="text-sm text-muted">Loading your Cyclopes…</p>
+          <p className="text-sm text-muted">Loading NFT images…</p>
         ) : ownedNfts.length === 0 ? (
           <p className="text-sm text-muted">Could not load NFT images.</p>
         ) : (

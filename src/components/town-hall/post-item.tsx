@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useWallet } from '@/components/wallet/wallet-context';
 import { Avatar } from '@/components/ascii/avatar';
+import { userDisplayName } from '@/lib/display-name';
 
 export interface PostAuthor {
   id: string;
@@ -20,10 +21,6 @@ export interface PostData {
   createdAt: string;
   author: PostAuthor;
   _count: { likes: number; replies?: number };
-}
-
-function shortAddress(address: string): string {
-  return address.length > 12 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
 }
 
 export function PostItem({
@@ -44,11 +41,11 @@ export function PostItem({
         <div className="flex items-center gap-2">
           <Avatar
             src={post.author.pfpImageUrl}
-            alt={post.author.username ?? post.author.walletAddress}
+            alt={userDisplayName(post.author.username, post.author.walletAddress)}
             size={24}
           />
           <span className="text-sage">
-            {post.author.username ?? shortAddress(post.author.walletAddress)}
+            {userDisplayName(post.author.username, post.author.walletAddress)}
           </span>
         </div>
         <time dateTime={post.createdAt}>{new Date(post.createdAt).toLocaleString()}</time>
