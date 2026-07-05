@@ -21,6 +21,14 @@ export function ProfileEditor() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  // The user object loads asynchronously, so keep the form state in sync.
+  useEffect(() => {
+    if (user) {
+      setUsername(user.username ?? '');
+      setPfpSerial(user.pfpSerial ?? null);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user || !holdsCollection) {
       setLoadingNfts(false);
@@ -50,13 +58,18 @@ export function ProfileEditor() {
     setError(null);
     setSaved(false);
     try {
+      const trimmedUsername = username.trim();
+      const usernamePayload =
+        trimmedUsername.length >= 3 && trimmedUsername !== (user?.username ?? '')
+          ? { username: trimmedUsername }
+          : {};
+      const pfpPayload =
+        pfpSerial !== user?.pfpSerial ? { pfpSerial } : {};
+
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(username !== user?.username ? { username } : {}),
-          ...(pfpSerial !== user?.pfpSerial ? { pfpSerial } : {}),
-        }),
+        body: JSON.stringify({ ...usernamePayload, ...pfpPayload }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
