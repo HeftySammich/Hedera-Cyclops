@@ -4,18 +4,27 @@ import { useEffect, useState } from 'react';
 import { Panel } from '@/components/ascii/panel';
 import type { TokenMetrics } from '@/lib/token-metrics';
 
-function formatNumber(value: number | undefined | null, decimals = 2): string {
+function formatCount(value: number | undefined | null): string {
   if (value == null || !Number.isFinite(value)) return '—';
+  if (value < 1000) {
+    return new Intl.NumberFormat('en-US', {
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
   }).format(value);
 }
 
 function formatHbar(value: number | undefined | null): string {
   if (value == null || !Number.isFinite(value)) return '—';
-  return `${formatNumber(value, 2)} HBAR`;
+  return `${new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)} HBAR`;
 }
 
 function MetricCard({
@@ -65,8 +74,8 @@ export function TokenMetricsSection() {
   }
 
   const remaining =
-    metrics.totalSupply != null && metrics.minted != null
-      ? Math.max(0, metrics.totalSupply - metrics.minted)
+    metrics.maxSupply != null && metrics.minted != null
+      ? Math.max(0, metrics.maxSupply - metrics.minted)
       : null;
 
   return (
@@ -74,15 +83,21 @@ export function TokenMetricsSection() {
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
         <MetricCard label="Token ID" value={metrics.tokenId} />
         <MetricCard label="Treasury" value={metrics.treasury ?? '—'} />
-        <MetricCard label="Total Supply" value={formatNumber(metrics.totalSupply, 0)} />
-        <MetricCard label="Minted" value={formatNumber(metrics.minted, 0)} sub={remaining != null ? `${formatNumber(remaining, 0)} remaining` : undefined} />
-        <MetricCard label="Holders" value={formatNumber(metrics.holders, 0)} />
+        <MetricCard label="Max Supply" value={formatCount(metrics.maxSupply)} />
+        <MetricCard
+          label="Minted"
+          value={formatCount(metrics.minted)}
+          sub={remaining != null ? `${formatCount(remaining)} remaining` : undefined}
+        />
+        <MetricCard label="Holders" value={formatCount(metrics.holders)} />
         <MetricCard
           label="Keys"
           value={metrics.keys.length > 0 ? metrics.keys.join(', ') : '—'}
         />
-        {metrics.volume24hHbar != null ? (
-          <MetricCard label="24h Volume" value={formatHbar(metrics.volume24hHbar)} />
+        {metrics.mintVolume24hHbar != null ? (
+          <MetricCard label="24h Mint Volume" value={formatHbar(metrics.mintVolume24hHbar)} />
+        ) : metrics.mints24h != null ? (
+          <MetricCard label="24h Mints" value={formatCount(metrics.mints24h)} />
         ) : null}
       </div>
     </Panel>

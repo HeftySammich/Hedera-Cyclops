@@ -5,18 +5,19 @@ import { fetchWithRetry } from './fetch-retry';
 export interface TokenMetrics {
   tokenId: string;
   treasury: string | null;
-  totalSupply: number | null;
+  maxSupply: number | null;
   minted: number | null;
   holders: number | null;
   keys: string[];
-  volume24hHbar: number | null;
+  mints24h: number | null;
+  mintVolume24hHbar: number | null;
   lastUpdated: string;
 }
 
 function asNumber(value: unknown): number | null {
   if (value == null) return null;
   const n = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 function tokenIdNumeric(tokenId: string): string {
@@ -66,6 +67,7 @@ function tokenKeys(info: Record<string, unknown>): string[] {
     ['kyc_key', 'KYC'],
     ['pause_key', 'Pause'],
     ['supply_key', 'Supply'],
+    ['metadata_key', 'Metadata'],
     ['fee_schedule_key', 'Fee Schedule'],
   ];
   return keyMap
@@ -73,23 +75,24 @@ function tokenKeys(info: Record<string, unknown>): string[] {
     .map(([, label]) => label);
 }
 
-async function getTokenVolume24h(tokenId: string): Promise<number | null> {
-  if (!env.hgraphApiKey) return null;
-  const nowMs = Date.now();
-  const startNs = (nowMs - 24 * 60 * 60 * 1000) * 1_000_000;
-  const endNs = nowMs * 1_000_000;
+async function getTokenMints24h(
+  tokenId: string
+): Promise<{ count: number | null; volumeHbar: number | null }> {
+  if (!env.hgraphApiKey) return { count: null, volumeHbar: null };
+
+  const startNs = (Date.now() - 24 * 60 * 60 * 1000) * 1_000_000;
   const idNum = tokenIdNumeric(tokenId);
 
   const query = `
-    query TokenVolume24h {
-      volume: ecosystem_nft_collection_sales_volume_total(
-        args: {
-          token_ids: "{${idNum}}"
-          start_ts: "${startNs}"
-          end_ts: "${endNs}"
+    query Mints24h($tokenId: bigint!, $start: bigint!) {
+      nfts: nft(
+        where: {
+          token_id: { _eq: $tokenId }
+          created_timestamp: { _gte: $start }
         }
+        limit: 1000
       ) {
-        total
+        serial_number
       }
     }
   `;
@@ -103,18 +106,26 @@ async function getTokenVolume24h(tokenId: string): Promise<number | null> {
           'content-type': 'application/json',
           'x-api-key': env.hgraphApiKey,
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({
+          query,
+          variables: { tokenId: idNum, start: String(startNs) },
+        }),
       }
     );
-    if (!res.ok) return null;
+    if (!res.ok) return { count: null, volumeHbar: null };
     const json = (await res.json()) as {
-      data?: { volume?: { total: number | string }[] };
+      data?: { nfts?: { serial_number: number | string }[] };
     };
-    const total = asNumber(json.data?.volume?.[0]?.total);
-    // HBAR-denominated values from Hgraph are usually returned in tinybar.
-    return total != null ? total / 100_000_000 : null;
+    const count = json.data?.nfts?.length ?? null;
+    return {
+      count,
+      volumeHbar:
+        count != null && env.mintPriceHbar != null
+          ? count * env.mintPriceHbar
+          : null,
+    };
   } catch {
-    return null;
+    return { count: null, volumeHbar: null };
   }
 }
 
@@ -124,29 +135,31 @@ async function getTokenMetricsUncached(): Promise<TokenMetrics> {
     return {
       tokenId: '—',
       treasury: null,
-      totalSupply: null,
+      maxSupply: null,
       minted: null,
       holders: null,
       keys: [],
-      volume24hHbar: null,
+      mints24h: null,
+      mintVolume24hHbar: null,
       lastUpdated: new Date().toISOString(),
     };
   }
 
-  const [info, holders, volume24hHbar] = await Promise.all([
+  const [info, holders, mints24h] = await Promise.all([
     getTokenInfo(tokenId),
     getTokenHolderCount(tokenId),
-    getTokenVolume24h(tokenId),
+    getTokenMints24h(tokenId),
   ]);
 
   return {
     tokenId,
     treasury: (info?.treasury_account_id as string) ?? null,
-    totalSupply: asNumber(info?.max_supply ?? info?.total_supply),
+    maxSupply: asNumber(info?.max_supply),
     minted: asNumber(info?.total_supply),
     holders,
     keys: info ? tokenKeys(info) : [],
-    volume24hHbar,
+    mints24h: mints24h.count,
+    mintVolume24hHbar: mints24h.volumeHbar,
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -155,6 +168,6 @@ const TOKEN_METRICS_TTL_SECONDS = 60;
 
 export const getTokenMetrics = unstable_cache(
   getTokenMetricsUncached,
-  ['token-metrics', env.hgraphApiKey, env.tokenIds.join(',')],
+  ['token-metrics', env.hgraphApiKey, String(env.mintPriceHbar ?? ''), env.tokenIds.join(',')],
   { revalidate: TOKEN_METRICS_TTL_SECONDS }
 );
