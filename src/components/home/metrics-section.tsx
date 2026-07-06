@@ -4,18 +4,18 @@ import { useEffect, useState } from 'react';
 import { Panel } from '@/components/ascii/panel';
 import type { HomeMetrics } from '@/lib/hedera-metrics';
 
-function formatCurrency(value: number | undefined): string {
+function formatCurrency(value: number | undefined, decimals = 2): string {
   if (value == null || !Number.isFinite(value)) return '—';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     notation: 'compact',
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(value);
 }
 
-function formatNumber(value: number | undefined, decimals = 3): string {
+function formatNumber(value: number | undefined, decimals = 2): string {
   if (value == null || !Number.isFinite(value)) return '—';
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
@@ -26,13 +26,13 @@ function formatNumber(value: number | undefined, decimals = 3): string {
 
 function formatHbar(value: number | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—';
-  return `${formatNumber(value, 3)} HBAR`;
+  return `${formatNumber(value, 2)} HBAR`;
 }
 
 function formatPercent(value: number | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—';
   const sign = value >= 0 ? '+' : '';
-  return `${sign}${value.toFixed(3)}%`;
+  return `${sign}${value.toFixed(2)}%`;
 }
 
 function MetricCard({
@@ -88,7 +88,7 @@ export function MetricsSection() {
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
         {hbar ? (
           <>
-            <MetricCard label="HBAR Price" value={formatCurrency(hbar.price)} />
+            <MetricCard label="HBAR Price" value={formatCurrency(hbar.price, 3)} />
             <MetricCard
               label="Market Cap"
               value={formatCurrency(hbar.marketCap)}
@@ -102,7 +102,7 @@ export function MetricsSection() {
 
         {network ? (
           <>
-            <MetricCard label="Live TPS" value={formatNumber(network.tps, 3)} />
+            <MetricCard label="Live TPS" value={formatNumber(network.tps, 2)} />
             <MetricCard label="Block Height" value={formatNumber(network.blockHeight, 0)} />
             <MetricCard label="Consensus Nodes" value={network.nodeCount.toString()} />
             <MetricCard label="Total Stake" value={formatHbar(network.totalStakeHb)} />
@@ -123,7 +123,7 @@ export function MetricsSection() {
             {hgraph.avgTimeToConsensus != null ? (
               <MetricCard
                 label="Avg Time to Consensus"
-                value={`${hgraph.avgTimeToConsensus.toFixed(3)} s`}
+                value={`${hgraph.avgTimeToConsensus.toFixed(2)} s`}
               />
             ) : null}
             {hgraph.newAccounts24h != null ? (
