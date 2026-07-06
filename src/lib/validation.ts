@@ -83,15 +83,30 @@ export const createWallEventSchema = z
   );
 
 export const createProjectSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  xHandle: z
-    .string()
-    .trim()
-    .regex(/^@?[A-Za-z0-9_]{1,15}$/)
-    .optional()
-    .nullable(),
-  website: z.string().url().optional().nullable(),
-  description: z.string().trim().min(1).max(2000),
+  name: z.string().trim().min(1, 'Project name is required.').max(120, 'Project name is too long.'),
+  xHandle: z.preprocess(
+    (val) => {
+      if (val == null || val === '') return null;
+      const cleaned = String(val).trim().replace(/^@/, '');
+      return cleaned === '' ? null : cleaned;
+    },
+    z
+      .string()
+      .regex(/^[A-Za-z0-9_]{1,15}$/, 'X handle must be 1-15 letters, numbers, or underscores.')
+      .optional()
+      .nullable()
+  ),
+  website: z.preprocess(
+    (val) => {
+      if (val == null || val === '') return null;
+      let url = String(val).trim();
+      if (!url) return null;
+      if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+      return url;
+    },
+    z.string().url('Website must be a valid URL.').optional().nullable()
+  ),
+  description: z.string().trim().min(1, 'Description is required.').max(2000, 'Description is too long.'),
 });
 
 export const createVouchSchema = z.object({
