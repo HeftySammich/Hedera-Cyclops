@@ -106,6 +106,7 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
         value={startsAt}
         onChange={(e) => setStartsAt(e.target.value)}
       />
+      <p className="text-xs text-muted">Times are in your local timezone.</p>
       <select
         className={inputClass}
         value={frequency}

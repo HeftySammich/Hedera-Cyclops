@@ -9,13 +9,18 @@ import { EventForm } from './event-form';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+function formatTime(date: Date): string {
+  return format(date, 'h:mm a');
+}
+
 function formatRecurrence(event: WallEvent): string {
+  const time = formatTime(new Date(event.startsAt));
   if (!event.recurring) {
     return format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a");
   }
   const freq = event.recurrenceFrequency;
   if (freq === 'weekdays') {
-    return 'Monday – Friday';
+    return `Monday – Friday at ${time}`;
   }
   if (freq === 'monthly') {
     const day = new Date(event.startsAt).getDate();
@@ -27,14 +32,14 @@ function formatRecurrence(event: WallEvent): string {
           : day === 3 || day === 23
             ? 'rd'
             : 'th';
-    return `Monthly on the ${day}${suffix}`;
+    return `Monthly on the ${day}${suffix} at ${time}`;
   }
   if (event.dayOfWeek == null) {
     return format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a");
   }
   const dayName = DAYS[event.dayOfWeek];
-  if (freq === 'biweekly') return `Every other ${dayName}`;
-  return `Every ${dayName}`;
+  if (freq === 'biweekly') return `Every other ${dayName} at ${time}`;
+  return `Every ${dayName} at ${time}`;
 }
 
 type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly' | 'weekdays';
