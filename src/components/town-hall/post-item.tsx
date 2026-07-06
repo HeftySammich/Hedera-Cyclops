@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useWallet } from '@/components/wallet/wallet-context';
 import { Avatar } from '@/components/ascii/avatar';
+import { ConfirmDialog } from '@/components/ascii/confirm-dialog';
 import { userDisplayName } from '@/lib/display-name';
 
 export interface PostAuthor {
@@ -37,6 +39,7 @@ export function PostItem({
   const { user, holdsCollection } = useWallet();
   const canAct = Boolean(user && holdsCollection);
   const canDelete = Boolean(user && (user.id === post.author.id || user.isAdmin));
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   return (
     <article className="border border-neutral-800 p-3">
@@ -80,17 +83,25 @@ export function PostItem({
         ) : null}
         {canDelete && onDelete ? (
           <button
-            onClick={() => {
-              if (confirm('Delete this post?')) {
-                onDelete(post.id);
-              }
-            }}
+            onClick={() => setDeleteConfirmOpen(true)}
             className="ml-auto hover:text-red-400"
           >
             delete
           </button>
         ) : null}
       </footer>
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Delete post"
+        message="Are you sure you want to delete this post?"
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setDeleteConfirmOpen(false);
+          onDelete?.(post.id);
+        }}
+        onCancel={() => setDeleteConfirmOpen(false)}
+      />
     </article>
   );
 }
