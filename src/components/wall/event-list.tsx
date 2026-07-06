@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { useWallet } from '@/components/wallet/wallet-context';
-import { Avatar } from '@/components/ascii/avatar';
-import { userDisplayName } from '@/lib/display-name';
 import { EventForm } from './event-form';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -90,13 +88,7 @@ export function EventList() {
           {events.map((event) => (
             <li key={event.id} className="border border-neutral-800 p-3 text-sm">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Avatar
-                    src={event.owner.pfpImageUrl}
-                    alt={userDisplayName(event.owner.username, event.owner.walletAddress)}
-                  />
-                  <span className="text-sage">{event.title}</span>
-                </div>
+                <span className="text-sage">{event.title}</span>
                 <span className="text-xs text-muted">
                   {formatRecurrence(event)}
                 </span>
