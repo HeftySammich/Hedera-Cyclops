@@ -9,7 +9,7 @@ interface AvatarProps {
   className?: string;
 }
 
-export function Avatar({ src, alt, size = 32, className = '' }: AvatarProps) {
+export function Avatar({ src, alt, size = 40, className = '' }: AvatarProps) {
   const style = { width: size, height: size };
   if (!src) {
     return (

@@ -45,7 +45,7 @@ export function PostItem({
           <Avatar
             src={post.author.pfpImageUrl}
             alt={userDisplayName(post.author.username, post.author.walletAddress)}
-            size={24}
+            size={40}
           />
           <span className="text-sage">
             {userDisplayName(post.author.username, post.author.walletAddress)}
