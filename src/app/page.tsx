@@ -4,7 +4,6 @@ import { getMintedCount } from '@/lib/nft';
 import { Panel } from '@/components/ascii/panel';
 import { Prompt } from '@/components/ascii/prompt';
 import { Button } from '@/components/ascii/button';
-import { MetricsSection } from '@/components/home/metrics-section';
 
 export const revalidate = 30;
 
@@ -67,8 +66,6 @@ export default async function HomePage() {
           </ul>
         ) : null}
       </Panel>
-
-      <MetricsSection />
 
       <Panel title="About the Collection">
         <p className="text-sm text-muted">

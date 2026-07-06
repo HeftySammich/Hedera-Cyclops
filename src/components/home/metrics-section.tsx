@@ -10,27 +10,29 @@ function formatCurrency(value: number | undefined): string {
     style: 'currency',
     currency: 'USD',
     notation: 'compact',
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
   }).format(value);
 }
 
-function formatNumber(value: number | undefined, decimals = 0): string {
+function formatNumber(value: number | undefined, decimals = 3): string {
   if (value == null || !Number.isFinite(value)) return '—';
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
+    minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);
 }
 
 function formatHbar(value: number | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—';
-  return `${formatNumber(value, 2)} HBAR`;
+  return `${formatNumber(value, 3)} HBAR`;
 }
 
 function formatPercent(value: number | undefined): string {
   if (value == null || !Number.isFinite(value)) return '—';
   const sign = value >= 0 ? '+' : '';
-  return `${sign}${value.toFixed(2)}%`;
+  return `${sign}${value.toFixed(3)}%`;
 }
 
 function MetricCard({
@@ -90,15 +92,17 @@ export function MetricsSection() {
             <MetricCard
               label="Market Cap"
               value={formatCurrency(hbar.marketCap)}
-              sub={`24h ${formatPercent(hbar.change24h)}`}
+              sub={hbar.change24h != null ? `24h ${formatPercent(hbar.change24h)}` : undefined}
             />
-            <MetricCard label="24h Volume" value={formatCurrency(hbar.volume24h)} />
+            {hbar.volume24h != null ? (
+              <MetricCard label="24h Volume" value={formatCurrency(hbar.volume24h)} />
+            ) : null}
           </>
         ) : null}
 
         {network ? (
           <>
-            <MetricCard label="Live TPS" value={formatNumber(network.tps, 1)} />
+            <MetricCard label="Live TPS" value={formatNumber(network.tps, 3)} />
             <MetricCard label="Block Height" value={formatNumber(network.blockHeight, 0)} />
             <MetricCard label="Consensus Nodes" value={network.nodeCount.toString()} />
             <MetricCard label="Total Stake" value={formatHbar(network.totalStakeHb)} />
@@ -119,7 +123,7 @@ export function MetricsSection() {
             {hgraph.avgTimeToConsensus != null ? (
               <MetricCard
                 label="Avg Time to Consensus"
-                value={`${(hgraph.avgTimeToConsensus * 1000).toFixed(0)} ms`}
+                value={`${hgraph.avgTimeToConsensus.toFixed(3)} s`}
               />
             ) : null}
             {hgraph.newAccounts24h != null ? (

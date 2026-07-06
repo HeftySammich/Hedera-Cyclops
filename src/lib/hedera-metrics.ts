@@ -5,8 +5,8 @@ import { fetchWithRetry } from './fetch-retry';
 export interface HbarMarketData {
   price: number;
   marketCap: number;
-  volume24h: number;
-  change24h: number;
+  volume24h?: number;
+  change24h?: number;
 }
 
 export interface HederaNetworkMetrics {
@@ -36,36 +36,55 @@ function asNumber(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-async function getHbarMarketDataUncached(): Promise<HbarMarketData | null> {
+const HGRAPH_GRAPHQL_URL = 'https://mainnet.hedera.api.hgraph.io/v1/graphql';
+
+async function hgraphFetch<T>(query: string): Promise<T | null> {
+  if (!env.hgraphApiKey) return null;
   try {
-    const url = new URL(
-      'https://api.coingecko.com/api/v3/simple/price'
-    );
-    url.searchParams.set('ids', 'hedera-hashgraph');
-    url.searchParams.set('vs_currencies', 'usd');
-    url.searchParams.set('include_market_cap', 'true');
-    url.searchParams.set('include_24hr_vol', 'true');
-    url.searchParams.set('include_24hr_change', 'true');
-
-    const headers: Record<string, string> = { accept: 'application/json' };
-    if (env.coingeckoApiKey) {
-      headers['x-cg-demo-api-key'] = env.coingeckoApiKey;
-    }
-
-    const res = await fetchWithRetry(url.toString(), { headers });
+    const res = await fetchWithRetry(HGRAPH_GRAPHQL_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': env.hgraphApiKey,
+      },
+      body: JSON.stringify({ query }),
+    });
     if (!res.ok) return null;
     const json = await res.json();
-    const data = json['hedera-hashgraph'];
-    if (!data) return null;
-    return {
-      price: asNumber(data.usd) ?? 0,
-      marketCap: asNumber(data.usd_market_cap) ?? 0,
-      volume24h: asNumber(data.usd_24h_vol) ?? 0,
-      change24h: asNumber(data.usd_24h_change) ?? 0,
-    };
+    return json.data ?? null;
   } catch {
     return null;
   }
+}
+
+async function getHbarMarketDataUncached(): Promise<HbarMarketData | null> {
+  const query = `
+    query HbarMarketData {
+      price: ecosystem_metric(
+        where: { name: { _eq: "avg_usd_conversion" }, period: { _eq: "minute" } }
+        order_by: { end_date: desc_nulls_last }
+        limit: 1
+      ) { total }
+      marketCap: ecosystem_metric(
+        where: { name: { _eq: "hbar_market_cap" }, period: { _eq: "day" } }
+        order_by: { end_date: desc_nulls_last }
+        limit: 1
+      ) { total }
+    }
+  `;
+
+  const data = await hgraphFetch<{ price: HgraphMetricRow[]; marketCap: HgraphMetricRow[] }>(query);
+  if (!data) return null;
+
+  const priceTotal = asNumber(data.price?.[0]?.total);
+  const marketCapTotal = asNumber(data.marketCap?.[0]?.total);
+
+  if (priceTotal == null && marketCapTotal == null) return null;
+
+  return {
+    price: priceTotal != null ? priceTotal / 100_000 : 0,
+    marketCap: marketCapTotal != null ? marketCapTotal / 100 : 0,
+  };
 }
 
 interface MirrorBlock {
@@ -133,8 +152,6 @@ interface HgraphMetricRow {
 }
 
 async function getHederaStatsUncached(): Promise<HederaStats | null> {
-  if (!env.hgraphApiKey) return null;
-
   const query = `
     query HomeStats {
       tvl: ecosystem_metric(
@@ -165,41 +182,25 @@ async function getHederaStatsUncached(): Promise<HederaStats | null> {
     }
   `;
 
-  try {
-    const res = await fetchWithRetry(
-      'https://mainnet.hedera.api.hgraph.io/v1/graphql',
-      {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': env.hgraphApiKey,
-        },
-        body: JSON.stringify({ query }),
-      }
-    );
-    if (!res.ok) return null;
-    const json = await res.json();
-    const data = json.data ?? {};
+  const data = await hgraphFetch<{ tvl: HgraphMetricRow[]; stablecoin: HgraphMetricRow[]; consensus: HgraphMetricRow[]; newAccounts: HgraphMetricRow[]; fees: HgraphMetricRow[] }>(query);
+  if (!data) return null;
 
-    const first = (rows: HgraphMetricRow[] | undefined): HgraphMetricRow | undefined =>
-      Array.isArray(rows) ? rows[0] : undefined;
+  const first = (rows: HgraphMetricRow[] | undefined): HgraphMetricRow | undefined =>
+    Array.isArray(rows) ? rows[0] : undefined;
 
-    const tvl = asNumber(first(data.tvl)?.total);
-    const stablecoin = asNumber(first(data.stablecoin)?.total);
-    const consensus = asNumber(first(data.consensus)?.total);
-    const newAccounts = asNumber(first(data.newAccounts)?.total);
-    const feesTinybar = asNumber(first(data.fees)?.total);
+  const tvl = asNumber(first(data.tvl)?.total);
+  const stablecoin = asNumber(first(data.stablecoin)?.total);
+  const consensus = asNumber(first(data.consensus)?.total);
+  const newAccounts = asNumber(first(data.newAccounts)?.total);
+  const feesTinybar = asNumber(first(data.fees)?.total);
 
-    return {
-      tvl,
-      stablecoinMarketcap: stablecoin,
-      avgTimeToConsensus: consensus,
-      newAccounts24h: newAccounts,
-      networkFee24hHb: feesTinybar != null ? feesTinybar / 100_000_000 : undefined,
-    };
-  } catch {
-    return null;
-  }
+  return {
+    tvl,
+    stablecoinMarketcap: stablecoin,
+    avgTimeToConsensus: consensus != null ? consensus / 1_000_000_000 : undefined,
+    newAccounts24h: newAccounts,
+    networkFee24hHb: feesTinybar != null ? feesTinybar / 100_000_000 : undefined,
+  };
 }
 
 async function getHomeMetricsUncached(): Promise<HomeMetrics> {
@@ -215,6 +216,6 @@ const HOME_METRICS_TTL_SECONDS = 60;
 
 export const getHomeMetrics = unstable_cache(
   getHomeMetricsUncached,
-  ['home-metrics', env.coingeckoApiKey, env.hgraphApiKey],
+  ['home-metrics', env.hgraphApiKey],
   { revalidate: HOME_METRICS_TTL_SECONDS }
 );
