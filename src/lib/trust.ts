@@ -3,6 +3,8 @@
 // The "trust score" is simply the distinct-voucher count; tiers are just a
 // friendlier presentation of that number and carry no functional gating.
 
+import { env } from './env';
+
 export interface TrustTier {
   key: 'unverified' | 'vouched' | 'trusted' | 'highly_trusted';
   label: string;
@@ -31,6 +33,7 @@ export function trustTierFor(vouchCount: number): TrustTier {
 export interface ProjectWithVouches {
   id: string;
   vouches: { voucherId: string }[];
+  submittedBy?: { walletAddress: string };
 }
 
 export interface ProjectTrustSummary {
@@ -40,11 +43,17 @@ export interface ProjectTrustSummary {
   tier: TrustTier;
 }
 
+function adminBonusVouches(project: ProjectWithVouches): number {
+  const wallet = project.submittedBy?.walletAddress;
+  if (!wallet) return 0;
+  return env.adminWalletAddresses.includes(wallet) ? 2 : 0;
+}
+
 export function summarizeProjectTrust(project: ProjectWithVouches): ProjectTrustSummary {
   // Distinct voucher count — the unique @@constraint already guarantees this
   // at the DB level, but we defend here too in case callers pass raw data.
   const distinctVouchers = new Set(project.vouches.map((v) => v.voucherId));
-  const vouchCount = distinctVouchers.size;
+  const vouchCount = distinctVouchers.size + adminBonusVouches(project);
   return {
     projectId: project.id,
     vouchCount,

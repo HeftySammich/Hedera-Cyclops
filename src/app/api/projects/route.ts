@@ -6,10 +6,9 @@ import { zodError, gateError, rateLimitError } from '@/lib/api';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { sanitizePlainText } from '@/lib/sanitize';
 import { summarizeProjectTrust, sortProjectsByTrust } from '@/lib/trust';
-import { resolvePfpImageUrl } from '@/lib/nft';
 
 const SUBMITTER_SELECT = {
-  select: { id: true, username: true, walletAddress: true, pfpSerial: true },
+  select: { id: true, username: true, walletAddress: true },
 } as const;
 
 export async function GET() {
@@ -20,20 +19,7 @@ export async function GET() {
     },
   });
 
-  const projectsWithPfp = await Promise.all(
-    projects.map(async (project) => ({
-      ...project,
-      submittedBy: {
-        ...project.submittedBy,
-        pfpImageUrl: await resolvePfpImageUrl(
-          project.submittedBy.walletAddress,
-          project.submittedBy.pfpSerial
-        ),
-      },
-    }))
-  );
-
-  const sorted = sortProjectsByTrust(projectsWithPfp);
+  const sorted = sortProjectsByTrust(projects);
   return NextResponse.json({
     projects: sorted.map((p) => ({ ...p, trust: summarizeProjectTrust(p) })),
   });
@@ -61,18 +47,8 @@ export async function POST(request: NextRequest) {
     include: { submittedBy: SUBMITTER_SELECT, vouches: { select: { voucherId: true } } },
   });
 
-  const projectWithPfp = {
-    ...project,
-    submittedBy: {
-      ...project.submittedBy,
-      pfpImageUrl: await resolvePfpImageUrl(
-        project.submittedBy.walletAddress,
-        project.submittedBy.pfpSerial
-      ),
-    },
-  };
   return NextResponse.json(
-    { project: { ...projectWithPfp, trust: summarizeProjectTrust(projectWithPfp) } },
+    { project: { ...project, trust: summarizeProjectTrust(project) } },
     { status: 201 }
   );
 }
