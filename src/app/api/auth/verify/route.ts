@@ -3,6 +3,7 @@ import { authVerifySchema } from '@/lib/validation';
 import { verifyAndConsumeNonce } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { setSessionCookie } from '@/lib/session';
+import { isAdminWallet } from '@/lib/env';
 import { jsonError, zodError } from '@/lib/api';
 
 const REASON_MESSAGES: Record<string, string> = {
@@ -24,9 +25,10 @@ export async function POST(request: NextRequest) {
     return jsonError(REASON_MESSAGES[result.reason] ?? 'Sign-in failed.', 401);
   }
 
+  const isAdmin = isAdminWallet(walletAddress);
   const user = await prisma.user.upsert({
     where: { walletAddress },
-    update: {},
+    update: { isAdmin },
     create: await (async () => {
       let serial = 1;
       const existing = await prisma.user.count();
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest) {
         serial += 1;
         username = `User ${serial}`;
       }
-      return { walletAddress, username };
+      return { walletAddress, username, isAdmin };
     })(),
   });
 

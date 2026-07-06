@@ -90,7 +90,7 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
       />
       <input
         className={inputClass}
-        placeholder="Project name"
+        placeholder="Host (e.g. HashPack)"
         value={projectName}
         onChange={(e) => setProjectName(e.target.value)}
       />
