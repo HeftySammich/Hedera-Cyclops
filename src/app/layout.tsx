@@ -3,7 +3,6 @@ import { IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import { WalletProvider } from '@/components/wallet/wallet-context';
 import { Nav } from '@/components/nav/nav';
-import { MetricsSection } from '@/components/home/metrics-section';
 
 const mono = IBM_Plex_Mono({
   subsets: ['latin'],
@@ -25,12 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="crt-vignette" aria-hidden="true" />
         <WalletProvider>
           <Nav />
-          <main className="mx-auto max-w-5xl px-4 py-8">
-            {children}
-            <div className="mt-8">
-              <MetricsSection />
-            </div>
-          </main>
+          <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
         </WalletProvider>
       </body>
     </html>
