@@ -57,6 +57,33 @@ async function hgraphFetch<T>(query: string): Promise<T | null> {
   }
 }
 
+async function getCoinGeckoHbarExtras(): Promise<Pick<HbarMarketData, 'volume24h' | 'change24h'>> {
+  try {
+    const url = new URL('https://api.coingecko.com/api/v3/simple/price');
+    url.searchParams.set('ids', 'hedera-hashgraph');
+    url.searchParams.set('vs_currencies', 'usd');
+    url.searchParams.set('include_24hr_vol', 'true');
+    url.searchParams.set('include_24hr_change', 'true');
+
+    const headers: Record<string, string> = { accept: 'application/json' };
+    if (env.coingeckoApiKey) {
+      headers['x-cg-demo-api-key'] = env.coingeckoApiKey;
+    }
+
+    const res = await fetchWithRetry(url.toString(), { headers });
+    if (!res.ok) return {};
+    const json = await res.json();
+    const data = json['hedera-hashgraph'];
+    if (!data) return {};
+    return {
+      volume24h: asNumber(data.usd_24h_vol),
+      change24h: asNumber(data.usd_24h_change),
+    };
+  } catch {
+    return {};
+  }
+}
+
 async function getHbarMarketDataUncached(): Promise<HbarMarketData | null> {
   const query = `
     query HbarMarketData {
@@ -73,7 +100,10 @@ async function getHbarMarketDataUncached(): Promise<HbarMarketData | null> {
     }
   `;
 
-  const data = await hgraphFetch<{ price: HgraphMetricRow[]; marketCap: HgraphMetricRow[] }>(query);
+  const [data, extras] = await Promise.all([
+    hgraphFetch<{ price: HgraphMetricRow[]; marketCap: HgraphMetricRow[] }>(query),
+    getCoinGeckoHbarExtras(),
+  ]);
   if (!data) return null;
 
   const priceTotal = asNumber(data.price?.[0]?.total);
@@ -84,6 +114,7 @@ async function getHbarMarketDataUncached(): Promise<HbarMarketData | null> {
   return {
     price: priceTotal != null ? priceTotal / 100_000 : 0,
     marketCap: marketCapTotal != null ? marketCapTotal / 100 : 0,
+    ...extras,
   };
 }
 
@@ -216,6 +247,6 @@ const HOME_METRICS_TTL_SECONDS = 60;
 
 export const getHomeMetrics = unstable_cache(
   getHomeMetricsUncached,
-  ['home-metrics', env.hgraphApiKey],
+  ['home-metrics', env.hgraphApiKey, env.coingeckoApiKey],
   { revalidate: HOME_METRICS_TTL_SECONDS }
 );

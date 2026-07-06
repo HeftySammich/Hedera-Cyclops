@@ -42,6 +42,7 @@ export const env = {
   authJwtSecret: process.env.AUTH_JWT_SECRET ?? '',
   authCookieName: process.env.AUTH_COOKIE_NAME ?? 'hc_session',
   hgraphApiKey: process.env.HGRAPH_API_KEY ?? '',
+  coingeckoApiKey: process.env.COINGECKO_API_KEY ?? '',
   objectStorage: {
     endpoint: process.env.OBJECT_STORAGE_ENDPOINT ?? '',
     region: process.env.OBJECT_STORAGE_REGION ?? 'auto',
