@@ -27,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Nav />
           <main className="mx-auto max-w-5xl px-4 py-8">
             {children}
-            <MetricsSection />
+            <div className="mt-8">
+              <MetricsSection />
+            </div>
           </main>
         </WalletProvider>
       </body>
