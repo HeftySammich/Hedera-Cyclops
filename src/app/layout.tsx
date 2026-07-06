@@ -25,6 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <WalletProvider>
           <Nav />
           <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+          <footer className="py-8 text-center text-xs text-muted">
+            <p>Hedera Cyclops</p>
+          </footer>
         </WalletProvider>
       </body>
     </html>

@@ -80,12 +80,10 @@ export default async function HomePage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Panel title="Town Hall">
-          <p className="text-sm text-muted">Live, holder-gated forum. Post, reply, and like.</p>
+          <p className="text-sm text-muted">Community forum. Post, reply, and like.</p>
         </Panel>
         <Panel title="The Ledger">
-          <p className="text-sm text-muted">
-            A trust registry for Hedera projects - one wallet, one vouch.
-          </p>
+          <p className="text-sm text-muted">A trust registry for Hedera projects.</p>
         </Panel>
         <Panel title="The Wall">
           <p className="text-sm text-muted">A calendar of community X Spaces and events.</p>
