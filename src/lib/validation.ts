@@ -39,13 +39,18 @@ export const updateProfileSchema = z.object({
   pfpSerial: z.number().int().positive().nullable().optional(),
 });
 
-const RECURRENCE_FREQUENCIES = ['weekly', 'biweekly', 'monthly'] as const;
+const RECURRENCE_FREQUENCIES = ['weekly', 'biweekly', 'monthly', 'weekdays'] as const;
 
 export const createWallEventSchema = z
   .object({
     title: z.string().trim().min(1).max(120),
     projectName: z.string().trim().min(1).max(120),
-    xSpaceUrl: z.string().url(),
+    xAccount: z
+      .string()
+      .trim()
+      .min(1)
+      .max(16)
+      .regex(/^@?[A-Za-z0-9_]{1,15}$/, 'Must be a valid X handle, e.g. @cyclops'),
     startsAt: z.coerce.date(),
     recurring: z.boolean().default(false),
     recurrenceFrequency: z.enum(['', ...RECURRENCE_FREQUENCIES]).optional(),
@@ -69,6 +74,7 @@ export const createWallEventSchema = z
     (data) =>
       !data.recurring ||
       data.recurrenceFrequency === 'monthly' ||
+      data.recurrenceFrequency === 'weekdays' ||
       data.dayOfWeek != null,
     {
       message: 'Weekly/bi-weekly events must specify a dayOfWeek',

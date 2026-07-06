@@ -12,13 +12,14 @@ const FREQUENCIES = [
   { value: 'weekly', label: 'Weekly' },
   { value: 'biweekly', label: 'Every other week' },
   { value: 'monthly', label: 'Monthly' },
+  { value: 'weekdays', label: 'Monday – Friday' },
 ] as const;
 
 export function EventForm({ onCreated }: { onCreated?: () => void }) {
   const { user, holdsCollection } = useWallet();
   const [title, setTitle] = useState('');
   const [projectName, setProjectName] = useState('');
-  const [xSpaceUrl, setXSpaceUrl] = useState('');
+  const [xAccount, setXAccount] = useState('');
   const [startsAt, setStartsAt] = useState('');
   const [frequency, setFrequency] = useState<string>('');
   const [dayOfWeek, setDayOfWeek] = useState(0);
@@ -29,6 +30,7 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
 
   const recurring = frequency !== '';
   const showDayOfWeek = recurring && (frequency === 'weekly' || frequency === 'biweekly');
+  const weekdayNotice = recurring && frequency === 'weekdays';
   const monthlyDay = recurring && frequency === 'monthly' && startsAt
     ? new Date(startsAt).getDate()
     : null;
@@ -40,7 +42,7 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
       const body: Record<string, unknown> = {
         title,
         projectName,
-        xSpaceUrl,
+        xAccount,
         startsAt: new Date(startsAt).toISOString(),
         recurring,
       };
@@ -63,7 +65,7 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
       }
       setTitle('');
       setProjectName('');
-      setXSpaceUrl('');
+      setXAccount('');
       setStartsAt('');
       setFrequency('');
       setDayOfWeek(0);
@@ -94,9 +96,9 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
       />
       <input
         className={inputClass}
-        placeholder="X Space URL"
-        value={xSpaceUrl}
-        onChange={(e) => setXSpaceUrl(e.target.value)}
+        placeholder="X account (@handle)"
+        value={xAccount}
+        onChange={(e) => setXAccount(e.target.value)}
       />
       <input
         type="datetime-local"
@@ -140,10 +142,13 @@ export function EventForm({ onCreated }: { onCreated?: () => void }) {
               : 'th'}
         </p>
       ) : null}
+      {weekdayNotice ? (
+        <p className="text-xs text-muted">Repeats Monday through Friday.</p>
+      ) : null}
       {error ? <span className="text-xs text-red-400">{error}</span> : null}
       <Button
         onClick={submit}
-        disabled={submitting || !title || !projectName || !xSpaceUrl || !startsAt}
+        disabled={submitting || !title || !projectName || !xAccount || !startsAt}
       >
         {submitting ? 'Adding…' : 'Add to Wall'}
       </Button>

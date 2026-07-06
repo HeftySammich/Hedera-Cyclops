@@ -14,6 +14,9 @@ function formatRecurrence(event: WallEvent): string {
     return format(new Date(event.startsAt), "MMM d, yyyy 'at' h:mm a");
   }
   const freq = event.recurrenceFrequency;
+  if (freq === 'weekdays') {
+    return 'Monday – Friday';
+  }
   if (freq === 'monthly') {
     const day = new Date(event.startsAt).getDate();
     const suffix =
@@ -34,13 +37,13 @@ function formatRecurrence(event: WallEvent): string {
   return `Every ${dayName}`;
 }
 
-type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly';
+type RecurrenceFrequency = 'weekly' | 'biweekly' | 'monthly' | 'weekdays';
 
 interface WallEvent {
   id: string;
   title: string;
   projectName: string;
-  xSpaceUrl: string;
+  xAccount: string;
   startsAt: string;
   recurring: boolean;
   recurrenceFrequency: RecurrenceFrequency | null;
@@ -86,7 +89,6 @@ export function EventList() {
                   <Avatar
                     src={event.owner.pfpImageUrl}
                     alt={userDisplayName(event.owner.username, event.owner.walletAddress)}
-                    size={24}
                   />
                   <span className="text-sage">{event.title}</span>
                 </div>
@@ -97,12 +99,12 @@ export function EventList() {
               <p className="mt-1 text-xs text-muted">{event.projectName}</p>
               <div className="mt-2 flex items-center justify-between text-xs">
                 <a
-                  href={event.xSpaceUrl}
+                  href={`https://x.com/${event.xAccount.replace(/^@/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted underline hover:text-sage"
                 >
-                  Join X Space
+                  @{event.xAccount.replace(/^@/, '')}
                 </a>
                 {user && (user.id === event.ownerId || user.isAdmin) ? (
                   <button onClick={() => remove(event.id)} className="text-muted hover:text-sage">

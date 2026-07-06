@@ -64,8 +64,8 @@ model WallEvent {
   ownerId     String
   title       String
   projectName String
-  xSpaceUrl   String
-  // For recurring weekly/bi-weekly events: 0-6 (Sun-Sat). Null for monthly or one-off.
+  xAccount    String
+  // For recurring weekly/bi-weekly/weekday events: 0-6 (Sun-Sat). Null for monthly or one-off.
   dayOfWeek   Int?
   // 'weekly' | 'biweekly' | 'monthly'. Null for one-off events.
   recurrenceFrequency String?

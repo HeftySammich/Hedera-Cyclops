@@ -60,11 +60,14 @@ export async function POST(request: NextRequest) {
       ownerId: gate.user.id,
       title: sanitizePlainText(parsed.data.title, 120),
       projectName: sanitizePlainText(parsed.data.projectName, 120),
-      xSpaceUrl: parsed.data.xSpaceUrl,
+      xAccount: parsed.data.xAccount.replace(/^@/, ''),
       startsAt: parsed.data.startsAt,
       recurring: parsed.data.recurring,
       recurrenceFrequency: parsed.data.recurrenceFrequency ?? null,
-      dayOfWeek: parsed.data.dayOfWeek ?? null,
+      dayOfWeek:
+        parsed.data.recurrenceFrequency === 'weekdays'
+          ? null
+          : (parsed.data.dayOfWeek ?? null),
     },
     include: { owner: OWNER_SELECT },
   });

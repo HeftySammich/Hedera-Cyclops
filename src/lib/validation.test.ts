@@ -50,7 +50,7 @@ describe('createWallEventSchema', () => {
   const base = {
     title: 'Weekly Alpha',
     projectName: 'Cyclops',
-    xSpaceUrl: 'https://x.com/i/spaces/1',
+    xAccount: '@cyclops',
     startsAt: new Date().toISOString(),
   };
 
@@ -80,6 +80,15 @@ describe('createWallEventSchema', () => {
 
   it('accepts a one-off event without dayOfWeek', () => {
     const result = createWallEventSchema.safeParse(base);
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a weekday recurring event without dayOfWeek', () => {
+    const result = createWallEventSchema.safeParse({
+      ...base,
+      recurring: true,
+      recurrenceFrequency: 'weekdays',
+    });
     expect(result.success).toBe(true);
   });
 });
