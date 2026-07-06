@@ -34,7 +34,7 @@ export function ConnectButton() {
           className="flex items-center gap-2 font-mono text-xs focus:outline-none"
           aria-label="Open wallet menu"
         >
-          <Avatar src={user.pfpImageUrl} alt={displayName} size={24} />
+          <Avatar src={user.pfpImageUrl} alt={displayName} size={32} />
           <span className="text-sage">{displayName}</span>
         </button>
         {open ? (

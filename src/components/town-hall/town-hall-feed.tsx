@@ -52,6 +52,13 @@ export function TownHallFeed() {
     await fetch(`/api/posts/${postId}/like`, { method: 'POST' });
   }
 
+  async function handleDelete(postId: string) {
+    const res = await fetch(`/api/posts/${postId}`, { method: 'DELETE' });
+    if (res.ok) {
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <PostComposer onPosted={loadPosts} />
@@ -60,7 +67,9 @@ export function TownHallFeed() {
       ) : posts.length === 0 ? (
         <p className="text-sm text-muted">No posts yet. Be the first to speak.</p>
       ) : (
-        posts.map((post) => <PostItem key={post.id} post={post} onLike={handleLike} />)
+        posts.map((post) => (
+          <PostItem key={post.id} post={post} onLike={handleLike} onDelete={handleDelete} />
+        ))
       )}
     </div>
   );

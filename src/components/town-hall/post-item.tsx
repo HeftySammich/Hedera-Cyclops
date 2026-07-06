@@ -26,14 +26,17 @@ export interface PostData {
 export function PostItem({
   post,
   onLike,
+  onDelete,
   showThreadLink = true,
 }: {
   post: PostData;
   onLike: (postId: string) => void;
+  onDelete?: (postId: string) => void;
   showThreadLink?: boolean;
 }) {
   const { user, holdsCollection } = useWallet();
   const canAct = Boolean(user && holdsCollection);
+  const canDelete = Boolean(user && (user.id === post.author.id || user.isAdmin));
 
   return (
     <article className="border border-neutral-800 p-3">
@@ -74,6 +77,18 @@ export function PostItem({
           <Link href={`/town-hall/${post.id}`} className="hover:text-sage">
             {post._count.replies ?? 0} replies
           </Link>
+        ) : null}
+        {canDelete && onDelete ? (
+          <button
+            onClick={() => {
+              if (confirm('Delete this post?')) {
+                onDelete(post.id);
+              }
+            }}
+            className="ml-auto hover:text-red-400"
+          >
+            delete
+          </button>
         ) : null}
       </footer>
     </article>
