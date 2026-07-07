@@ -9,8 +9,12 @@ export function shortAddress(address: string): string {
   return address.length > 12 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
 }
 
-/** Default display name: the full wallet address when no username is set. */
+const AUTO_USERNAME_PATTERN = /^User \d+$/i;
+
+/** Default display name: the full wallet address when no username is set.
+ *  Also treats legacy auto-generated "User <number>" names as unset so existing
+ *  DB rows display the wallet without needing a migration. */
 export function userDisplayName(username: string | null | undefined, walletAddress: string): string {
-  if (username) return username;
+  if (username && !AUTO_USERNAME_PATTERN.test(username.trim())) return username;
   return walletAddress;
 }

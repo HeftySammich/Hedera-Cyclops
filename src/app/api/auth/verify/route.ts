@@ -29,18 +29,7 @@ export async function POST(request: NextRequest) {
   const user = await prisma.user.upsert({
     where: { walletAddress },
     update: { isAdmin },
-    create: await (async () => {
-      let serial = 1;
-      const existing = await prisma.user.count();
-      serial = existing + 1;
-      let username = `User ${serial}`;
-      // Avoid collisions in the unlikely event existing users already use this pattern.
-      while (await prisma.user.findUnique({ where: { username } })) {
-        serial += 1;
-        username = `User ${serial}`;
-      }
-      return { walletAddress, username, isAdmin };
-    })(),
+    create: { walletAddress, username: null, isAdmin },
   });
 
   const response = NextResponse.json({
