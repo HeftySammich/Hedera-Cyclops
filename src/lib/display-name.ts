@@ -9,10 +9,8 @@ export function shortAddress(address: string): string {
   return address.length > 12 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
 }
 
-/** Default readable name for a wallet: "User <serial>" when no username is set.
- * This keeps the UI friendly without requiring every account to have a stored username. */
+/** Default display name: the full wallet address when no username is set. */
 export function userDisplayName(username: string | null | undefined, walletAddress: string): string {
   if (username) return username;
-  const serial = walletSerial(walletAddress);
-  return serial ? `User ${serial}` : shortAddress(walletAddress);
+  return walletAddress;
 }
