@@ -18,15 +18,6 @@ function formatCount(value: number | undefined | null): string {
   }).format(value);
 }
 
-function formatHbar(value: number | undefined | null): string {
-  if (value == null || !Number.isFinite(value)) return '—';
-  return `${new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)} HBAR`;
-}
-
 function MetricCard({
   label,
   value,
@@ -94,11 +85,6 @@ export function TokenMetricsSection() {
           label="Keys"
           value={metrics.keys.length > 0 ? metrics.keys.join(', ') : '—'}
         />
-        {metrics.mintVolume24hHbar != null ? (
-          <MetricCard label="24h Mint Volume" value={formatHbar(metrics.mintVolume24hHbar)} />
-        ) : metrics.mints24h != null ? (
-          <MetricCard label="24h Mints" value={formatCount(metrics.mints24h)} />
-        ) : null}
       </div>
     </Panel>
   );

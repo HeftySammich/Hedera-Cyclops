@@ -43,10 +43,6 @@ export const env = {
   authCookieName: process.env.AUTH_COOKIE_NAME ?? 'hc_session',
   hgraphApiKey: process.env.HGRAPH_API_KEY ?? '',
   coingeckoApiKey: process.env.COINGECKO_API_KEY ?? '',
-  mintPriceHbar: (() => {
-    const n = Number(process.env.MINT_PRICE_HBAR);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  })(),
   objectStorage: {
     endpoint: process.env.OBJECT_STORAGE_ENDPOINT ?? '',
     region: process.env.OBJECT_STORAGE_REGION ?? 'auto',
